@@ -5,3 +5,4 @@ channels:
   - defaults
 dependencies:
   - r-base=4.2.1
+  - spyder=5.3.3
