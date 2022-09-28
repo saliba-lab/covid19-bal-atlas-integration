@@ -13,7 +13,17 @@ This repository contains code for the processing and analysis of scRNA-seq sampl
 
 ## Analysis workflow
 
+The analyis workflow starts from the cell x gene count matrix.
+
 1. Create the conda environment
    ```
    conda env create -f envs/_template.yml
    ```
+1. Run the scripts for analysis of the combined BAL dataset
+   ```
+   python bin/dataset-combined.py
+   ```
+   
+## Raw data processing
+
+Raw data in this case means Illumina base call (bcl) files. The processing is performed by cellranger pipelines run on a [Slurm](https://slurm.schedmd.com/overview.html) controlled high performance cluster (HPC).
