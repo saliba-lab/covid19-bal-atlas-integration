@@ -18,6 +18,7 @@ The analyis workflow starts from the cell x gene count matrix.
 1. Create the conda environment
    ```
    conda env create -f envs/_template.yml
+   conda activate covid19-bal-atlas
    ```
 1. Run the scripts for analysis of the combined BAL dataset
    ```
