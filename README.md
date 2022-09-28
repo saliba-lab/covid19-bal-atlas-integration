@@ -4,4 +4,5 @@ This repository contains code for the processing and analysis of scRNA-seq sampl
 
 ## Directory Structure
 
+* `envs/` - **conda** environment YAML files
 * `LICENSE` - The project license

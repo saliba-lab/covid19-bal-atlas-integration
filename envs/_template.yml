@@ -1,0 +1,7 @@
+name: covid19-bal-atlas
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - r-base=4.2.1
