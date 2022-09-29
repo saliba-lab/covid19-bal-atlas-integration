@@ -28,7 +28,7 @@ The analyis workflow starts from the cell x gene count matrix.
 ## Reference and Query Datasets
 
 Different datasets will be used for integration and mapping. Information about the datasets can be found in the [issues](https://github.com/saliba-lab/covid19-bal-atlas-integration/issues) while the download and use of the datasets is performed using scripts in `bin/` such as
-> dataset-combined.py
+> [dataset-combined.py](https://github.com/OliverDietrich/covid19.atlas/blob/main/bin/dataset-combined.py)
 
 ## Raw data processing
 
