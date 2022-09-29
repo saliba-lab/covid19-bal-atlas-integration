@@ -27,12 +27,8 @@ The analyis workflow starts from the cell x gene count matrix.
 
 ## Reference and Query Datasets
 
-Different datasets will be used for integration and mapping. Information about the datasets can be found here while the download and use of the datasets is performed using scripts in `bin/` such as
+Different datasets will be used for integration and mapping. Information about the datasets can be found in the [issues](https://github.com/saliba-lab/covid19-bal-atlas-integration/issues) while the download and use of the datasets is performed using scripts in `bin/` such as
 > dataset-combined.py
-
-### References
-
-Reference datases are well annotated atlases of the healthy or diseased lung. More information about them can be found in the [issues](https://github.com/saliba-lab/covid19-bal-atlas-integration/issues)
 
 ## Raw data processing
 
