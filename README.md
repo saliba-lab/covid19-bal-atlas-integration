@@ -32,18 +32,7 @@ Different datasets will be used for integration and mapping. Information about t
 
 ### References
 
-Reference datases are well annotated atlases of the healthy or diseased lung
-
-#### HLCA
-
-The Integrated Human Lung Cell Atlas (HLCA). Read up on the [GitHub](https://github.com/LungCellAtlas/HLCA) and [preprint](https://www.biorxiv.org/content/10.1101/2022.03.10.483747v1).
-
-1. HLCA core:
-   > https://cellxgene.cziscience.com/collections/6f6d381a-7701-4781-935c-db10d30de293
-1. HLCA extended
-   > https://beta.fastgenomics.org/datasets/detail-dataset-427f1eee6dd44f50bae1ab13f0f3c6a9#Files
-
-### Querys
+Reference datases are well annotated atlases of the healthy or diseased lung. More information about them can be found in the [issues](https://github.com/saliba-lab/covid19-bal-atlas-integration/issues)
 
 ## Raw data processing
 
