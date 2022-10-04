@@ -48,7 +48,7 @@ Raw data in this case means Illumina base call (bcl) files. The processing is pe
    sbatch bin/combined_cellranger-aggr.sh
    ```
 1. Share data
-   Take data matrix in data/processed/combined/outs/filtered_feature_bc_matrix.h5 and upload it to cloud service (we use [Nubes](https://nubes.helmholtz-berlin.de)
+   Take data matrix in data/processed/combined/outs/filtered_feature_bc_matrix.h5 and upload it to cloud service (we use [Nubes](https://nubes.helmholtz-berlin.de))
    
 ### Viral assembly
 
@@ -64,4 +64,4 @@ Raw data in this case means Illumina base call (bcl) files. The processing is pe
    sbatch bin/combined-viral_cellranger-aggr.sh
    ```
 1. Share data
-   Take data matrix in data/processed/combined/outs/filtered_feature_bc_matrix.h5 and upload it to cloud service (we use [Nubes](https://nubes.helmholtz-berlin.de)
+   Take data matrix in data/processed/combined/outs/filtered_feature_bc_matrix.h5 and upload it to cloud service (we use [Nubes](https://nubes.helmholtz-berlin.de))
