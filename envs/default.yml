@@ -1,0 +1,16 @@
+name: covid19-bal-atlas
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - docopt
+  - r-docopt
+  - scanpy
+  - scvi-tools
+  - r-seurat
+  - bioconductor-scran
+  - bioconductor-zellkonverter
+  - bioconductor-rhdf5
+  - bioconductor-hdf5array
+  - spyder
