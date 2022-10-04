@@ -33,4 +33,12 @@ scov_ind <- which(stringr::str_detect(index, "ENSSASG"))
 scov_mat <- ds[scov_ind, ]
 ds <- ds[hs_ind, ]
 
-# Continue with QC...
+# Create Seurat object ---------------------------------------------------------
+
+ds <- SeuratObject::CreateSeuratObject(
+  counts = ds, assay = "RNA"
+)
+
+ds[["viral"]] <- SeuratObject::CreateAssayObject(
+  counts = scov_mat
+)
