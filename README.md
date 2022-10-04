@@ -34,3 +34,34 @@ Different datasets will be used for integration and mapping. Information about t
 ## Raw data processing
 
 Raw data in this case means Illumina base call (bcl) files. The processing is performed by cellranger pipelines run on a [Slurm](https://slurm.schedmd.com/overview.html) controlled high performance cluster (HPC).
+
+### Combined BAL dataset
+
+1. Create genome reference
+   ```
+   sbatch bin/GRCh38-SCoV2_cellranger-mkref.sh
+   ```
+1. Run cellranger pipelines
+   ```
+   sbatch bin/combined_cellranger-mkfastq.sh
+   sbatch bin/combined_cellranger-count.sh
+   sbatch bin/combined_cellranger-aggr.sh
+   ```
+1. Share data
+   Take data matrix in data/processed/combined/outs/filtered_feature_bc_matrix.h5 and upload it to cloud service (we use [Nubes](https://nubes.helmholtz-berlin.de)
+   
+### Viral assembly
+
+1. Create genome reference
+   ```
+   Rscript bin/download-viral-genomes.R
+   sbatch bin/GRCh38_SCoV2_cellranger-mkref.sh
+   ```
+1. Run cellranger pipelines
+   ```
+   sbatch bin/combined-viral_cellranger-mkfastq.sh
+   sbatch bin/combined-viral_cellranger-count.sh
+   sbatch bin/combined-viral_cellranger-aggr.sh
+   ```
+1. Share data
+   Take data matrix in data/processed/combined/outs/filtered_feature_bc_matrix.h5 and upload it to cloud service (we use [Nubes](https://nubes.helmholtz-berlin.de)
