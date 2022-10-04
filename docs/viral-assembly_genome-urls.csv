@@ -1,0 +1,11 @@
+name,refseq,type,url
+SCoV2,NC_045512.2,fasta,https://www.ncbi.nlm.nih.gov/sviewer/viewer.cgi?tool=portal&save=file&log$=seqview&db=nuccore&report=fasta&id=1798174254&conwithfeat=on&withparts=on&hide-cdd=on
+SCoV2,NC_045512.2,gff3,https://www.ncbi.nlm.nih.gov/sviewer/viewer.cgi?tool=portal&save=file&log$=seqview&db=nuccore&report=gff3&id=1798174254&conwithfeat=on&withparts=on&hide-cdd=on
+HSV1,NC_001806.2,fasta,https://www.ncbi.nlm.nih.gov/sviewer/viewer.cgi?tool=portal&save=file&log$=seqview&db=nuccore&report=fasta&id=820945227&conwithfeat=on&withparts=on&hide-cdd=on
+HSV1,NC_001806.2,gff3,https://www.ncbi.nlm.nih.gov/sviewer/viewer.cgi?tool=portal&save=file&log$=seqview&db=nuccore&report=gff3&id=820945227&conwithfeat=on&withparts=on&hide-cdd=on
+CMV,NC_006273.2,fasta,https://www.ncbi.nlm.nih.gov/sviewer/viewer.cgi?tool=portal&save=file&log$=seqview&db=nuccore&report=fasta&id=155573622&conwithfeat=on&withparts=on&hide-cdd=on
+CMV,NC_006273.2,gff3,https://www.ncbi.nlm.nih.gov/sviewer/viewer.cgi?tool=portal&save=file&log$=seqview&db=nuccore&report=gff3&id=155573622&conwithfeat=on&withparts=on&hide-cdd=on
+HHV6A,NC_001664.4,fasta,https://www.ncbi.nlm.nih.gov/sviewer/viewer.cgi?tool=portal&save=file&log$=seqview&db=nuccore&report=fasta&id=1344462938&conwithfeat=on&withparts=on&hide-cdd=on
+HHV6A,NC_001664.4,gff3,https://www.ncbi.nlm.nih.gov/sviewer/viewer.cgi?tool=portal&save=file&log$=seqview&db=nuccore&report=gff3&id=1344462938&conwithfeat=on&withparts=on&hide-cdd=on
+HHV6B,NC_000898.1,fasta,https://www.ncbi.nlm.nih.gov/sviewer/viewer.cgi?tool=portal&save=file&log$=seqview&db=nuccore&report=fasta&id=9633069&conwithfeat=on&withparts=on&hide-cdd=on
+HHV6B,NC_000898.1,gff3,https://www.ncbi.nlm.nih.gov/sviewer/viewer.cgi?tool=portal&save=file&log$=seqview&db=nuccore&report=gff3&id=9633069&conwithfeat=on&withparts=on&hide-cdd=on

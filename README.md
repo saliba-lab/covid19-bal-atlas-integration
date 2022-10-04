@@ -8,6 +8,7 @@ This repository contains code for the processing and analysis of scRNA-seq sampl
 * `docs/` - Document files
 * `data/` - Data output (large, not included in **git**)
 * `analysis/` - Analysis output (not included in **git**)
+* `man/` - Manuals explaining the rationale behind analyses
 * `envs/` - **conda** environment YAML files
 * `LICENSE` - The project license
 
@@ -27,24 +28,40 @@ The analyis workflow starts from the cell x gene count matrix.
 
 ## Reference and Query Datasets
 
-Different datasets will be used for integration and mapping. Information about the datasets can be found here while the download and use of the datasets is performed using scripts in `bin/` such as
-> dataset-combined.py
-
-### References
-
-Reference datases are well annotated atlases of the healthy or diseased lung
-
-#### HLCA
-
-The Integrated Human Lung Cell Atlas (HLCA). Read up on the [GitHub](https://github.com/LungCellAtlas/HLCA) and [preprint](https://www.biorxiv.org/content/10.1101/2022.03.10.483747v1).
-
-1. HLCA core:
-   > https://cellxgene.cziscience.com/collections/6f6d381a-7701-4781-935c-db10d30de293
-1. HLCA extended
-   > https://beta.fastgenomics.org/datasets/detail-dataset-427f1eee6dd44f50bae1ab13f0f3c6a9#Files
-
-### Querys
+Different datasets will be used for integration and mapping. Information about the datasets can be found in the [issues](https://github.com/saliba-lab/covid19-bal-atlas-integration/issues) while the download and use of the datasets is performed using scripts in `bin/` such as
+> [dataset-combined.py](https://github.com/OliverDietrich/covid19.atlas/blob/main/bin/dataset-combined.py)
 
 ## Raw data processing
 
 Raw data in this case means Illumina base call (bcl) files. The processing is performed by cellranger pipelines run on a [Slurm](https://slurm.schedmd.com/overview.html) controlled high performance cluster (HPC).
+
+### Combined BAL dataset
+
+1. Create genome reference
+   ```
+   sbatch bin/GRCh38-SCoV2_cellranger-mkref.sh
+   ```
+1. Run cellranger pipelines
+   ```
+   sbatch bin/combined_cellranger-mkfastq.sh
+   sbatch bin/combined_cellranger-count.sh
+   sbatch bin/combined_cellranger-aggr.sh
+   ```
+1. Share data
+   Take data matrix in data/processed/combined/outs/filtered_feature_bc_matrix.h5 and upload it to cloud service (we use [Nubes](https://nubes.helmholtz-berlin.de)
+   
+### Viral assembly
+
+1. Create genome reference
+   ```
+   Rscript bin/download-viral-genomes.R
+   sbatch bin/GRCh38_SCoV2_cellranger-mkref.sh
+   ```
+1. Run cellranger pipelines
+   ```
+   sbatch bin/combined-viral_cellranger-mkfastq.sh
+   sbatch bin/combined-viral_cellranger-count.sh
+   sbatch bin/combined-viral_cellranger-aggr.sh
+   ```
+1. Share data
+   Take data matrix in data/processed/combined/outs/filtered_feature_bc_matrix.h5 and upload it to cloud service (we use [Nubes](https://nubes.helmholtz-berlin.de)
