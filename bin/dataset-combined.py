@@ -15,6 +15,7 @@ import os
 import os.path
 import tempfile
 import scanpy as sc
+import pandas as pd
 from docopt import docopt
 
 # Global settings
@@ -39,6 +40,22 @@ adata = sc.read_10x_h5(temp_file)
 adata.var_names_make_unique()
 
 temp_dir.cleanup()
+
+print("Move viral counts in separate layer")
+viral_ids = [s for s in adata.var.gene_ids if "ENSSASG" in s]
+viral_ind = adata.var.gene_ids.isin(viral_ids)
+viral_genes = adata.var.index[viral_ind]
+vmat = adata.X[:, viral_ind].todense()
+vmat = pd.DataFrame(vmat)
+vmat.columns = viral_genes
+vmat.index = adata.obs.index
+adata.obsm["SCoV2_counts"] = vmat
+
+human_ids = [s for s in adata.var.gene_ids if "ENSG" in s]
+adata = adata[:, adata.var.gene_ids.isin(human_ids)]
+
+print("Store raw counts as layer")
+adata.layers["counts"] = adata.X
 
 print(f"Saving AnnData to '{out_file}'")
 adata.write_h5ad(out_file)

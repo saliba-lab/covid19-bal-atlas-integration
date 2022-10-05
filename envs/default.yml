@@ -8,9 +8,20 @@ dependencies:
   - r-docopt
   - scanpy
   - scvi-tools
+  - pymde
+  - pip
   - r-seurat
   - bioconductor-scran
+  - bioconductor-scater
   - bioconductor-zellkonverter
   - bioconductor-rhdf5
   - bioconductor-hdf5array
+  - bioconductor-singler
+  - bioconductor-aucell
+  - bioconductor-batchelor
+  - r-readxl
+  - r-viridis
+  - r-remotes
   - spyder
+  - pip:
+    - igraph
