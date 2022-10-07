@@ -61,7 +61,7 @@ read_slot_h5ad <- function(
   )
   
   index <- match(slot, rhdf5::h5ls(file)$name)
-  path <- paste0(h5ls(file)$group[index], "/", slot)
+  path <- paste0(rhdf5::h5ls(file)$group[index], "/", slot)
   data <- rhdf5::h5read(file, path, read.attributes = TRUE)
   
   # Convert lists into factors
