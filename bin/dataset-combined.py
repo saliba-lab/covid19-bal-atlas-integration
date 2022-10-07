@@ -4,58 +4,83 @@
 Download the combined BAL dataset
 
 Usage:
-    dataset-combined.py [options]
+    dataset-combined.py --file-out=<path> [options]
     
 Options:
-    -h --help           Show this screen.
-    -o --overwrite      Overwrite existing file.
+    -h --help                   Show this screen.
+    -f --file-out=<path>        Output file
+    -o --overwrite              Overwrite existing file.
 """
 
-import os
-import os.path
-import tempfile
-import scanpy as sc
-import pandas as pd
-from docopt import docopt
 
-# Global settings
-url = "https://nubes.helmholtz-berlin.de/s/A7XQ3yZYGMnFR3H"
-url = os.path.join(url, "download")
-out_file = "data/combined.h5ad"
+def get_combined():
+    """
+    Get the combined BAL dataset
 
-# Check file presence / overwrite
-args = docopt(__doc__)
-if (os.path.exists(out_file) and not args["--overwrite"]):
-    print(f"'{out_file}' already exists. Exiting")
-    exit(2)
+    Returns
+    -------
+    AnnData containing the combined BAL dataset.
 
-print(f"Downloading matrix from '{url}'")
-temp_dir = tempfile.TemporaryDirectory()
-temp_file = os.path.join(temp_dir.name, "matrix.h5")
-call = "curl" + " " + url + " -o " + temp_file
-os.system(call)
+    """
+    import os.path
+    import tempfile
+    import scanpy as sc
+    import pandas as pd
+    
+    # Variables
+    url = "https://nubes.helmholtz-berlin.de/s/A7XQ3yZYGMnFR3H"
+    url = os.path.join(url, "download")
 
-print("Create AnnData object")
-adata = sc.read_10x_h5(temp_file)
-adata.var_names_make_unique()
+    # Download
+    print(f"Downloading matrix from '{url}'")
+    temp_dir = tempfile.TemporaryDirectory()
+    temp_file = os.path.join(temp_dir.name, "matrix.h5")
+    call = "curl" + " " + url + " -o " + temp_file
+    os.system(call)
 
-temp_dir.cleanup()
+    # Object creation
+    print("Create AnnData object")
+    adata = sc.read_10x_h5(temp_file)
+    adata.var_names_make_unique()
 
-print("Move viral counts in separate layer")
-viral_ids = [s for s in adata.var.gene_ids if "ENSSASG" in s]
-viral_ind = adata.var.gene_ids.isin(viral_ids)
-viral_genes = adata.var.index[viral_ind]
-vmat = adata.X[:, viral_ind].todense()
-vmat = pd.DataFrame(vmat)
-vmat.columns = viral_genes
-vmat.index = adata.obs.index
-adata.obsm["SCoV2_counts"] = vmat
+    temp_dir.cleanup()
 
-human_ids = [s for s in adata.var.gene_ids if "ENSG" in s]
-adata = adata[:, adata.var.gene_ids.isin(human_ids)]
+    # Data wrangling
+    print("Move viral counts in separate layer")
+    viral_ids = [s for s in adata.var.gene_ids if "ENSSASG" in s]
+    viral_ind = adata.var.gene_ids.isin(viral_ids)
+    viral_genes = adata.var.index[viral_ind]
+    vmat = adata.X[:, viral_ind].todense()
+    vmat = pd.DataFrame(vmat)
+    vmat.columns = viral_genes
+    vmat.index = adata.obs.index
+    adata.obsm["SCoV2_counts"] = vmat
 
-print("Store raw counts as layer")
-adata.layers["counts"] = adata.X
+    return adata
 
-print(f"Saving AnnData to '{out_file}'")
-adata.write_h5ad(out_file)
+
+def main():
+    """The main script function"""
+    from docopt import docopt
+    import os.path
+
+    args = docopt(__doc__)
+    
+    flag_overwrite = args["--overwrite"]
+    file_out = args["--file-out"]
+    
+    # Checks
+    if (os.path.exists(file_out) and not flag_overwrite):
+        print(f"'{file_out}' already exists. Exiting")
+        exit(2)
+        
+    print("Read dataset:")
+    output = get_combined()
+    print(output)
+    
+    print(f"Writing output to '{file_out}'")
+    output.write_h5ad(file_out)
+
+
+if __name__ == "__main__":
+    main()

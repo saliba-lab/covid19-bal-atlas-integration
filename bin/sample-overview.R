@@ -1,6 +1,14 @@
-# Download sample overview
+"
+Quality control for the combined dataset
 
-# Set variables ----------------------------------------------------------------
+Usage:
+    analysis-combined-qc.R [options]
+    
+Options:
+    -h --help     Show this screen.
+" -> doc
+
+# Global variables -------------------------------------------------------------
 
 # Input params
 file <- "docs/overview.xlsx"
@@ -10,7 +18,8 @@ url <- paste0(url, "/download")
 # Output params
 fastq_path <- "docs/fastq-path.csv"
 sheet_path <- "docs/samplesheets/"
-dest <- paste0("analysis/overview", Sys.Date(), "/")
+plot_dir <- paste0("analysis/combined/overview/")
+dir.create(plot_dir, recursive = TRUE)
 
 # Download data ----------------------------------------------------------------
 
@@ -87,6 +96,8 @@ data$type_sample <- paste0(data$type, "-", data$sample, " (", data$patient, ")")
 data <- data[order(data$dpso_value), ]
 data$type_sample <- factor(data$type_sample, unique(data$type_sample))
 
+sind <- c("Male" = "\u2642", "Female" = "\u2640")
+
 # Plot sample data
 ggplot2::ggplot(data, ggplot2::aes(dpso_value, type_sample, fill = age)) +
   ggplot2::geom_col(position = "dodge") +
@@ -104,5 +115,5 @@ ggplot2::ggplot(data, ggplot2::aes(dpso_value, type_sample, fill = age)) +
     panel.grid.minor.x = ggplot2::element_line(linetype = "dashed")
   )
 
-fn <- paste0(dest, "patients.png")
+fn <- paste0(plot_dir, "patients.png")
 ggplot2::ggsave(fn, width = 12, height = 6)

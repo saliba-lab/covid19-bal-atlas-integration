@@ -23,9 +23,18 @@ The analyis workflow starts from the cell x gene count matrix.
    ```
 1. Run the scripts for analysis of the combined BAL dataset
    ```
-   python bin/dataset-combined.py
+   python bin/dataset-combined.py -f data/combined.h5ad
+   Rscript bin/analysis-combined-qc.R
+   python bin/analysis-combined-qc.py
+   python bin/analysis-combined-scVI.py
+   Rscript bin/analysis-combined-fastMNN.R
+   Rscript bin/analysis-combined-celltype.R
+   python bin/analysis-combined-explore.py
    ```
-
+1. Mapping to the Human Lung Cell Atlas
+   ```
+   bash bin/dataset-hlca.sh
+   ```
 ## Reference and Query Datasets
 
 Different datasets will be used for integration and mapping. Information about the datasets can be found in the [issues](https://github.com/saliba-lab/covid19-bal-atlas-integration/issues) while the download and use of the datasets is performed using scripts in `bin/` such as
