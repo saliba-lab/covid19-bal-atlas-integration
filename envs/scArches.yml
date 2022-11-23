@@ -1,0 +1,12 @@
+name: covid19-bal-atlas-scarches
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - docopt
+  - scanpy
+  - spyder
+  - pip
+  - pip:
+      - scarches

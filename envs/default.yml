@@ -7,10 +7,12 @@ dependencies:
   - docopt
   - r-docopt
   - scanpy
+  - louvain
   - scvi-tools
   - pymde
   - pip
   - r-seurat
+  - r-biocmanager
   - bioconductor-scran
   - bioconductor-scater
   - bioconductor-zellkonverter
@@ -19,9 +21,13 @@ dependencies:
   - bioconductor-singler
   - bioconductor-aucell
   - bioconductor-batchelor
+  - r-markdown
+  - r-rmarkdown
   - r-readxl
   - r-viridis
   - r-remotes
   - spyder
-  - pip:
-    - igraph
+  - igraph
+  - r-ggraph
+  - r-shinycssloaders
+  - r-reticulate

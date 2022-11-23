@@ -1,6 +1,7 @@
 # Data directories (too large for GitHub)
 data/
 analysis/
+archive/
 
 # R files
 .Rhistory

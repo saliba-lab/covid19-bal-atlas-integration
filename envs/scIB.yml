@@ -1,0 +1,13 @@
+name: covid19-bal-atlas-scib
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - docopt
+  - r-base
+  - scanpy
+  - spyder
+  - pip
+  - pip:
+      - scib

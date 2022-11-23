@@ -1,0 +1,12 @@
+name: covid19-bal-atlas-shiny
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - docopt
+  - r-docopt
+  - r-base
+  - r-shiny
+  - r-shinycssloaders
+  - bioconductor-rhdf5

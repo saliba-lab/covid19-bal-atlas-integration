@@ -1,0 +1,15 @@
+Group,Type,Metric,Description,Best score,Apply
+Batch removal,label-free,PCR (batch),Variance contribution,0,Yes
+Batch removal,label-free,ASW (batch),Comparing within-cluster distances and between-cluster distances,0,Yes
+Batch removal,label,Graph connectivity,,1,Yes
+Batch removal,label-free,graph iLISI,Batch mixing on knn graph,1,Yes
+Batch removal,label,kBET,Assess label composition of knn graph,0,Yes
+Bio conservation,label,NMI,Comparing overlap of two clusterings,1,Yes
+Bio conservation,label,ARI,Comparing overlap of two clusterings,1,Yes
+Bio conservation,label,ASW (cell-type),Comparing within-cluster distances and between-cluster distances,1,Yes
+Bio conservation,label,graph cLISI,Cell-type separation on knn-graph,1,Yes
+Bio conservation,label,isolated-label F1,Separation of cell-type labels of isolated (in few batches) labels,1,Yes
+Bio conservation,label,isolated-label ASW,Comparing within-cluster distances and between-cluster distances,1,Yes
+Bio conservation,label-free,CellCycle conservation,"Variance contribution (PCR) of cell-cycle scores (G2M, S)",1,Yes
+Bio conservation,label-free,HVG conservation,Overlap of HVGs calculated on corrected matrix,1,No
+Bio conservation,label-free,trajectory conservation,Correlation (spearman) of pseudotime values before/after correction,1,No
