@@ -34,7 +34,7 @@ To reproduce the analysis please
       bash miniconda.sh
       rm miniconda.sh
       ```
-1. Create conda environments
+3. Create conda environments
    ```
    conda env create -f envs/default.yml
    ```
