@@ -26,3 +26,11 @@ The analysis workflow include download & setup of datasets. Quality control, dat
 evaluation using (scIB) metrics and visualization of reports.
 
 The workflows are written in bash and can be submitted using SLURM.
+
+1. Install conda (follow instructions and accept defaults)
+
+```
+curl -o miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+bash miniconda.sh
+rm miniconda.sh
+```
