@@ -37,4 +37,6 @@ To reproduce the analysis please
 1. Create conda environments
    ```
    conda env create -f envs/default.yml
+   conda env create -f envs/scArches.yml
+   conda env create -f envs/scIB.yml
    ```
