@@ -370,7 +370,7 @@ main <- function() {
   in_file <- args[["<file>"]]
   in_file_viral <- paste0(dirname(in_file), "/SCoV2_", basename(in_file))
   in_file_csv <- "docs/BCB_aggr.csv"
-  in_file_xls <- "docs/overview.xlsx"
+  in_file_xls <- "docs/BCB_overview.xlsx"
   
   out_file <- stringr::str_replace(in_file, ".h5ad", "_qc_colData.csv")
   
@@ -385,7 +385,7 @@ main <- function() {
   ds <- read_h5ad(in_file)
   vs <- read_h5ad(in_file_viral)
   csv <- read.csv(in_file_csv)
-  xls <- readxl::read_excel(in_file_xls, "sample")
+  xls <- readxl::read_excel(in_file_xls, "samples")
   
   # Add metrics ----------------------------------------------------------------
   message("Adding metadata & quality metrics")

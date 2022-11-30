@@ -1,8 +1,0 @@
-name: covid19-bal-atlas
-channels:
-  - conda-forge
-  - bioconda
-  - defaults
-dependencies:
-  - mamba
-  - nextflow

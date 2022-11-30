@@ -34,22 +34,26 @@ To reproduce the analysis please
    bash miniconda.sh
    rm miniconda.sh
    ```
-1. Clone and enter the git repository
+1. Install [mamba](https://mamba.readthedocs.io/en/latest/installation.html)
    ```
+   conda install -c bioconda mamba -y
+   mamba init
+   ```
+1. Clone and enter the git repository (if you want to specify the directory replace '~' with your local path)
+   ```
+   cd ~
    git clone https://github.com/saliba-lab/covid19-bal-atlas-integration.git
    cd covid19-bal-atlas-integration
    ```
 1. Create conda environments
    ```
-   conda env create -f envs/default.yml
-   conda activate covid19-bal-atlas
-   mamba init
+   mamba env create -f envs/R.yml
+   mamba env create -f envs/integration.yml
+   conda env create -f envs/scib.yml
    ```
-   close and re-open terminal
+1. Execute workflows (beginning with the count matrix)
    ```
-   mamba env create -f envs/scran.yml
-   mamba env create -f envs/scArches.yml
-   mamba env create -f envs/scIB.yml
+   bash workflows/setup_BCB.sh
    ```
    
 ## Addendum
