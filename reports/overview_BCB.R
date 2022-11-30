@@ -14,10 +14,10 @@ Options:
 #' 
 #' @returns Data.frame with sample overview
 #' 
-read_overview_samples <- function(file) {
+read_libaries <- function(file) {
   
   # Read into memory
-  data <- readxl::read_excel(file, "sample")
+  data <- readxl::read_excel(file, "libraries")
   
   # Remove empty rows
   index <- which(data$run != "")
@@ -45,7 +45,7 @@ read_overview_samples <- function(file) {
 add_patient_overview <- function(data, file) {
   
   # Load patient data
-  patients <- readxl::read_excel(file, "patient")
+  patients <- readxl::read_excel(file, "patients")
   
   # Add patient data
   index <- match(data$patient, patients$id)
@@ -58,45 +58,71 @@ add_patient_overview <- function(data, file) {
   return(data)
 }
 
-#' Extract fastq paths
-#' 
-#' @param file Excel file with sample overview
-#' 
-#' @returns Character of FASTQ paths
-#' 
-extract_fastqs <- function(data) {
-  
-  # Subset to columns included in samplesheet
-  index <- match(c("path_1", "run", "path_2", "flowcell", "sample"), names(data))
-  fastqs <- data[, index]
-  
-  # Combine into single path
-  collapse <- function (x) {stringr::str_c(x, collapse = "/")}
-  fastqs <- apply(fastqs, 1, collapse)
-  
-  # Remove whitespaces
-  fastqs <- stringr::str_remove(fastqs, "\\s")
-  
-  return(fastqs)
-}
-
-#' Extract sheets
+#' Create cellranger mkfastq samplesheets
 #' 
 #' @param data Data.frame with sample overview
 #' 
 #' @returns List with samplesheets
 #' 
-extract_sheets <- function(data) {
+create_mkfastq_samplesheets <- function(data, hto_ind) {
   
   # Subset to columns included in samplesheet
-  index <- match(c("lane", "sample", "index"), names(data))
+  index <- match(c("lane", "libname", "index", "run"), names(data))
   sheets <- data[, index]
-  names(sheets) <- stringr::str_to_title(names(sheets))
+  names(sheets) <- c("Lane", "Sample", "Index", "Run")
+  
+  # Add TotalSeq-A HTO sequences
+  for (i in sheets$Sample) {
+    ind <- which(data$libname == i)
+    index <- data[["TotalSeq-A"]][ind]
+    if (!is.na(index)) {
+      barcode <- hto_ind$barcode[hto_ind$index == index]
+      row <- c(data$lane[ind], paste0(i, "-HTO"), barcode, data$run[ind])
+      sheets <- rbind(sheets, row)
+    }
+  }
   
   # Split samplesheet by run
-  sheets <- split(sheets, data$run)
+  sheets <- split(sheets[, -4], sheets$Run)
   
   return(sheets)
+}
+
+#' Create cellranger count library CSVs
+#' 
+#' @param file Excel file with sample overview
+#' 
+#' @returns Character of FASTQ paths
+#' 
+create_count_samplesheets <- function(data) {
+  
+  # Subset to columns included in samplesheet
+  index <- match(c("libname", "TotalSeq-A", "path_1", 
+                   "run", "path_2", "flowcell"), names(data))
+  libs <- data[, index]
+  libs <- split(libs, libs$libname)
+  for (i in names(libs)) {
+    lib <- libs[[i]]
+    csv <- data.frame(
+      fastqs = stringr::str_c(
+        fastqs[[i]][, c("path_1", "run", "path_2", "flowcell", "libname")], 
+        collapse = "/"),
+      sample = i,
+      library_type = "Gene Expression"
+    )
+    if (!is.na(lib$`TotalSeq-A`)) {
+      csv <- rbind(csv, c(
+        stringr::str_c(
+          fastqs[[i]][, c("path_1", "run", "path_2", "flowcell")], 
+          collapse = "/"),
+        paste0(i, "-HTO"), "Antibody Capture"
+      ))
+    }
+    # Add csv to list
+    libs[[i]] <- csv
+  }
+  
+  return(libs)
 }
 
 #' Plot patient overview
@@ -144,36 +170,61 @@ plot_overview_patients <- function(data) {
 main <- function() {
   
   # Variables ------------------------------------------------------------------
-  file <- "docs/overview.xlsx"
+  file <- "docs/BCB_overview.xlsx"
   url <- "https://nubes.helmholtz-berlin.de/s/LnJn5z8wB2o2NrJ"
   url <- paste0(url, "/download")
   
-  fastq_path <- "docs/fastq-path.csv"
-  sheet_path <- "docs/samplesheets/"
+  mkfastq_samplesheets <- "docs/cellranger/mkfastq/"
+  count_library_csv <- "docs/cellranger/count/"
+  hto_indices <- "docs/HTO-indices.csv"
   plot_dir <- paste0("analysis/BCB/overview/")
+  
+  # Create directories
   dir.create(plot_dir, recursive = TRUE)
+  dir.create(mkfastq_samplesheets, recursive = TRUE)
+  dir.create(count_library_csv, recursive = TRUE)
   
   # Read data ------------------------------------------------------------------
   download.file(url, file)
-  data <- read_overview_samples(file)
-  data <- add_patient_overview(data, file)
+  hto_ind <- read.csv(hto_indices)
+  data <- read_libaries(file)
+  #data <- add_patient_overview(data, file)
   
-  # Extract components ---------------------------------------------------------
+  # Mkfastq samplesheets -------------------------------------------------------
   
-  # FASTQs
-  fastqs <- extract_fastqs(data)
-  writeLines(fastqs, fastq_path)
-  
-  # Samplesheets
-  sheets <- extract_sheets(data)
-  dir.create(sheet_path, recursive = TRUE)
+  sheets <- create_mkfastq_samplesheets(data, hto_ind)
   for (i in names(sheets)) {
-    csv <- paste0(sheet_path, i, ".csv")
+    csv <- paste0(mkfastq_samplesheets, i, ".csv")
     write.csv(sheets[[i]], csv, row.names = FALSE)
   }
   
+  # Count samplesheets ---------------------------------------------------------
+  
+  sheets <- create_count_samplesheets(data)
+  for (i in names(sheets)) {
+    csv <- paste0(count_library_csv, i, ".csv")
+    write.csv(sheets[[i]], csv, row.names = FALSE)
+  }
+  
+  # Patient overview -----------------------------------------------------------
+  
+  # Detect samples across libraries
+  samples <- stringr::str_split(data$sample, ",")
+  names(samples) <- 1:length(samples)
+  for (i in names(samples)) {
+    if (length(samples[[i]]) > 1) {
+      samples[[i]] <- stringr::str_split(samples[[i]], ":", simplify = TRUE)[,2]
+    }
+  }
+  samples <- unlist(samples)
+  
+  # Add sample data
+  pnts <- readxl::read_excel(file, "patients")
+  smpl  <- readxl::read_excel(file, "samples")
+  smpl$sequenced <- smpl$sample %in% unique(samples)
+  
   # Plot patient overview
-  plot_overview_patients(data)
+  plot_overview_patients(pnts)
   fn <- paste0(plot_dir, "samples.png")
   ggplot2::ggsave(fn, width = 12, height = 6)
   
