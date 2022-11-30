@@ -1,0 +1,15 @@
+id,name,read,pattern,sequence,feature_type
+Hashtag1,Hashtag1_TotalA,R2,^(BC),GTCAACTCTTTAGCG,Antibody Capture
+Hashtag2,Hashtag2_TotalA,R2,^(BC),TGATGGCCTATTGGG,Antibody Capture
+Hashtag3,Hashtag3_TotalA,R2,^(BC),TTCCGCCTCTCTTTG,Antibody Capture
+Hashtag4,Hashtag4_TotalA,R2,^(BC),AGTAAGTTCAGCGTA,Antibody Capture
+Hashtag5,Hashtag5_TotalA,R2,^(BC),AAGTATCGTTTCGCA,Antibody Capture
+Hashtag6,Hashtag6_TotalA,R2,^(BC),GGTTGCCAGATGTCA,Antibody Capture
+Hashtag7,Hashtag7_TotalA,R2,^(BC),TGTCTTTCCTGCCAG,Antibody Capture
+Hashtag8,Hashtag8_TotalA,R2,^(BC),CTCCTCTGCAATTAC,Antibody Capture
+Hashtag9,Hashtag9_TotalA,R2,^(BC),CAGTAGTCACGGTCA,Antibody Capture
+Hashtag10,Hashtag10_TotalA,R2,^(BC),ATTGACCCGCGTTAG,Antibody Capture
+Hashtag12,Hashtag12_TotalA,R2,^(BC),TAACGACCAGCCATA,Antibody Capture
+Hashtag13,Hashtag13_TotalA,R2,^(BC),AAATCTCTCAGGCTC,Antibody Capture
+Hashtag14,Hashtag14_TotalA,R2,^(BC),CTGTATGTCCGATTG,Antibody Capture
+Hashtag15,Hashtag15_TotalA,R2,^(BC),TAAGATTCAGAGCGA,Antibody Capture
