@@ -23,10 +23,8 @@ read_libaries <- function(file) {
   index <- which(data$run != "")
   data <- data[index, ]
   
-  # Extract flowcell name from run
+  # Extract flowcell name from run and remove leading character (A & B)
   data$flowcell <- stringr::str_split(data$run, "_", simplify = TRUE)[, 4]
-  
-  # Remove leading character (A & B)
   data$flowcell <- gsub("^\\w", "", data$flowcell)
   
   # Add path elements
@@ -104,8 +102,8 @@ create_count_samplesheets <- function(data) {
   for (i in names(libs)) {
     lib <- libs[[i]]
     csv <- data.frame(
-      fastqs = stringr::str_c(
-        fastqs[[i]][, c("path_1", "run", "path_2", "flowcell", "libname")], 
+      lib = stringr::str_c(
+        libs[[i]][, c("path_1", "run", "path_2", "flowcell", "libname")], 
         collapse = "/"),
       sample = i,
       library_type = "Gene Expression"
@@ -113,7 +111,7 @@ create_count_samplesheets <- function(data) {
     if (!is.na(lib$`TotalSeq-A`)) {
       csv <- rbind(csv, c(
         stringr::str_c(
-          fastqs[[i]][, c("path_1", "run", "path_2", "flowcell")], 
+          libs[[i]][, c("path_1", "run", "path_2", "flowcell")], 
           collapse = "/"),
         paste0(i, "-HTO"), "Antibody Capture"
       ))
@@ -123,6 +121,24 @@ create_count_samplesheets <- function(data) {
   }
   
   return(libs)
+}
+
+combine_data <- function(libraries, samples, patients) {
+  
+  # Add sequencing info to samples
+  sind <- stringr::str_split(libraries$sample, ",")
+  names(sind) <- 1:length(sind)
+  for (i in names(sind)) {
+    if (length(sind[[i]]) > 1) {
+      sind[[i]] <- stringr::str_split(sind[[i]], ":", simplify = TRUE)[,2]
+    }
+  }
+  sind <- unlist(sind)
+  samples$sequenced <- samples$sample %in% sind
+  
+  # Calculate dpso
+  pind <- a
+  
 }
 
 #' Plot patient overview
@@ -170,12 +186,12 @@ plot_overview_patients <- function(data) {
 main <- function() {
   
   # Variables ------------------------------------------------------------------
-  file <- "docs/BCB_overview.xlsx"
+  file <- "docs/overview.xlsx"
   url <- "https://nubes.helmholtz-berlin.de/s/LnJn5z8wB2o2NrJ"
   url <- paste0(url, "/download")
   
-  mkfastq_samplesheets <- "docs/cellranger/mkfastq/"
-  count_library_csv <- "docs/cellranger/count/"
+  mkfastq_samplesheets <- "docs/samplesheets/mkfastq/"
+  count_library_csv <- "docs/samplesheets/count/"
   hto_indices <- "docs/HTO-indices.csv"
   plot_dir <- paste0("analysis/BCB/overview/")
   
@@ -208,20 +224,11 @@ main <- function() {
   
   # Patient overview -----------------------------------------------------------
   
-  # Detect samples across libraries
-  samples <- stringr::str_split(data$sample, ",")
-  names(samples) <- 1:length(samples)
-  for (i in names(samples)) {
-    if (length(samples[[i]]) > 1) {
-      samples[[i]] <- stringr::str_split(samples[[i]], ":", simplify = TRUE)[,2]
-    }
-  }
-  samples <- unlist(samples)
-  
-  # Add sample data
+  # Combine library, sample & patient data
   pnts <- readxl::read_excel(file, "patients")
   smpl  <- readxl::read_excel(file, "samples")
-  smpl$sequenced <- smpl$sample %in% unique(samples)
+  
+  data <- combine_data(data, smpl, pnts)
   
   # Plot patient overview
   plot_overview_patients(pnts)

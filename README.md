@@ -48,7 +48,7 @@ To reproduce the analysis please
 1. Create conda environments
    ```
    mamba env create -f envs/R.yml
-   mamba env create -f envs/integration.yml
+   conda env create -f envs/integration.yml
    conda env create -f envs/scib.yml
    ```
 1. Execute workflows (beginning with the count matrix)
