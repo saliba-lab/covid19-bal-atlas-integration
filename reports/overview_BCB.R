@@ -34,28 +34,6 @@ read_libaries <- function(file) {
   return(data)
 }
 
-#' Add patient overview
-#' 
-#' @param file Excel file with dataset overview
-#' 
-#' @returns Data.frame with sample overview
-#' 
-add_patient_overview <- function(data, file) {
-  
-  # Load patient data
-  patients <- readxl::read_excel(file, "patients")
-  
-  # Add patient data
-  index <- match(data$patient, patients$id)
-  data$age <- patients$age[index]
-  data$sex <- patients$sex[index]
-  
-  # Create sample id
-  data$type_sample <- paste0(data$type, "-", data$sample, " (", data$patient, ")")
-  
-  return(data)
-}
-
 #' Create cellranger mkfastq samplesheets
 #' 
 #' @param data Data.frame with sample overview
@@ -123,10 +101,18 @@ create_count_samplesheets <- function(data) {
   return(libs)
 }
 
-combine_data <- function(libraries, samples, patients) {
+#' Create sample overview
+#' 
+#' @param data Data.frame of sequenced libraries
+#' 
+create_sample_overview <- function(data) {
   
-  # Add sequencing info to samples
-  sind <- stringr::str_split(libraries$sample, ",")
+  # Combine library, sample & patient data
+  patients <- readxl::read_excel(file, "patients")
+  samples  <- readxl::read_excel(file, "samples")
+  
+  # Subset to sequenced samples
+  sind <- stringr::str_split(data$sample, ",")
   names(sind) <- 1:length(sind)
   for (i in names(sind)) {
     if (length(sind[[i]]) > 1) {
@@ -134,50 +120,51 @@ combine_data <- function(libraries, samples, patients) {
     }
   }
   sind <- unlist(sind)
-  samples$sequenced <- samples$sample %in% sind
+  samples <- samples[samples$sample %in% sind, ]
+  samples <- samples[samples$cohort %in% c("A", "B", "C", "Recovery"), ]
   
-  # Calculate dpso
-  pind <- a
+  # Calculate DPSO
+  samples$onset <- patients[["Hospital-admission"]][match(
+    samples$patient, patients$id
+  )]
+  ind <- is.na(samples$dpso)
+  dpso <- samples$date - samples$onset
+  samples$dpso[ind] <- dpso[ind]
   
-}
-
-#' Plot patient overview
-#' 
-#' @param data Data.frame with overview
-#' 
-#' @returns plot
-#' 
-plot_overview_patients <- function(data) {
+  # Add patient information
+  ind <- match(samples$patient, patients$id)
+  samples$sex <- patients$sex[ind]
+  samples$endpoint <- patients$endpoint[ind]
   
-  # Re-order data
-  data <- data[order(data$cohort, data$dpso, data$patient), ]
-  data$type_sample <- factor(data$type_sample, unique(data$type_sample))
+  # Order
+  ind <- dplyr::summarise(
+    dplyr::group_by(samples, patient), dpso = max(dpso), cohort = cohort,
+    endpoint = endpoint
+  )
+  ind <- unique(ind)
+  ind <- ind$patient[order(ind$cohort, ind$endpoint, ind$dpso)]
+  samples$patient <- factor(as.character(samples$patient), ind)
   
-  sind <- c("Male" = "\u2642", "Female" = "\u2640")
-  
-  # Plot sample data
-  plot <- ggplot2::ggplot(data, ggplot2::aes(dpso, type_sample, fill = age)) +
-    ggplot2::geom_col(position = "dodge") +
+  # Plot
+  plot <- ggplot2::ggplot(samples, ggplot2::aes(dpso, patient)) +
+    ggplot2::geom_point(ggplot2::aes(fill = cohort), size = 3, shape = 21) +
+    ggplot2::scale_fill_manual(values = color$cohort) +
     ggplot2::geom_point(
       ggplot2::aes(x = -5, color = sex), 
-      shape = sind[data$sex], size = 5
+      shape = shape$sex[samples$sex], size = 4
     ) +
-    ggplot2::theme_classic(20) +
-    ggplot2::labs(x = "Days post symptom onset", y = "Patient") +
-    ggplot2::guides(
-      fill = ggplot2::guide_legend(override.aes = list(size = 0))
+    ggplot2::geom_point(
+      ggplot2::aes(x = max(na.omit(dpso))+4, shape = endpoint), size = 4
     ) +
+    ggplot2::scale_shape_manual(values = shape$endpoint) +
+    ggplot2::theme_classic(15) +
     ggplot2::theme(
-      panel.grid.major.x = ggplot2::element_line(),
-      panel.grid.minor.x = ggplot2::element_line(linetype = "dashed"),
-      strip.text.y = ggplot2::element_text(angle = 0)
-    ) +
-    ggplot2::facet_grid(cohort ~ ., scales = "free_y", space = "free_y")
-  
-  plot
-  
-  fn <- "analysis/BCB/overview/samples.png"
-  ggplot2::ggsave(fn, width = 12, height = 10)
+      strip.text.y = ggplot2::element_text(angle = 0),
+      panel.background = ggplot2::element_rect(fill = "grey90"),
+      panel.grid.major.y = ggplot2::element_line(color = "white", size = 4),
+      panel.grid.major.x = ggplot2::element_line(size = 1, color = "black"),
+      panel.grid.minor.x = ggplot2::element_line(size = .5, color = "black")
+    )
   
   return(plot)
 }
@@ -199,6 +186,29 @@ main <- function() {
   dir.create(plot_dir, recursive = TRUE)
   dir.create(mkfastq_samplesheets, recursive = TRUE)
   dir.create(count_library_csv, recursive = TRUE)
+  
+  # Colors & shapes ------------------------------------------------------------
+  
+  # Color
+  color <- list()
+  color$cohort <- c(
+    "A" = "indianred",
+    "B" = "orange",
+    "C" = "orangered",
+    "Recovery" = "purple"
+  )
+  
+  # Shape
+  shape <- list()
+  shape$sex <- c(
+    "Male" = "\u2642", 
+    "Female" = "\u2640"
+    )
+  shape$endpoint <- c(
+    death = "\u271D",
+    release = "\u25CB",
+    unknown = "\u003F"
+  )
   
   # Read data ------------------------------------------------------------------
   download.file(url, file)
@@ -222,17 +232,12 @@ main <- function() {
     write.csv(sheets[[i]], csv, row.names = FALSE)
   }
   
-  # Patient overview -----------------------------------------------------------
+  # Sample overview ------------------------------------------------------------
   
-  # Combine library, sample & patient data
-  pnts <- readxl::read_excel(file, "patients")
-  smpl  <- readxl::read_excel(file, "samples")
+  create_sample_overview(data)
   
-  data <- combine_data(data, smpl, pnts)
-  
-  # Plot patient overview
-  plot_overview_patients(pnts)
-  fn <- paste0(plot_dir, "samples.png")
+  # Save
+  fn <- paste0(plot_dir, "sample-overview.png")
   ggplot2::ggsave(fn, width = 12, height = 6)
   
   message("Done!")
