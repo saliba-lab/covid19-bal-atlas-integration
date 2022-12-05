@@ -61,6 +61,16 @@ create_mkfastq_samplesheets <- function(data, hto_ind) {
   # Split samplesheet by run
   sheets <- split(sheets[, -4], sheets$Run)
   
+  # Manage exception for run 221014
+  # Problem was the use of single-index (i5) for HTOs with
+  # dual indices (SI-TT-) for gene expression
+  run <- "221014_A00643_0567_AHYMN3DSX3"
+  sheet <- sheets[[run]]
+  
+  key <- paste0(run, "_HTO")
+  sheets[[key]] <- sheet[stringr::str_which(sheet$Index,"SI-TT",negate=TRUE), ]
+  sheets[[run]] <- sheet[stringr::str_which(sheet$Index, "SI-TT"), ]
+  
   return(sheets)
 }
 
