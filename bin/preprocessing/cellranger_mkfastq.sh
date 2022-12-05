@@ -1,8 +1,8 @@
 #!/bin/bash
 
 #SBATCH --job-name=mkfastq
-#SBATCH --output=log/cellranger/mkfastq.log
-#SBATCH --error=log/cellranger/mkfastq.log
+#SBATCH --output=log/cellranger_mkfastq.log
+#SBATCH --error=log/cellranger_mkfastq.log
 #SBATCH --partition=cpu
 #SBATCH --nodes=1
 #SBATCH --ntasks=20
@@ -16,7 +16,7 @@
 
 # Choose PATH for the cellranger version
 export PATH=/vol/biotools/bin:$PATH
-export PATH=/vol/projects/odietric/bin/cellranger/cellranger-5.0.1:$PATH
+export PATH=/vol/biotools/bin/cellranger-7.0.0:$PATH
 
 # Show at beginning of job
 hostname -f
@@ -24,7 +24,7 @@ date
 
 # Define file PATHs
 basedir=$(pwd)
-samplesheets="$basedir/docs/samplesheets/*"
+samplesheets="$basedir/docs/samplesheets/mkfastq/*"
 bcl="$basedir/data/raw/bcl/"
 fastq="data/raw/fastq/"
 
@@ -54,7 +54,8 @@ do
     trigger=0
   fi
 
-  # Checkpoint --- FASTQ files ---
+  # Checkpoint
+  # Detect the presence of FASTQ files
   if [[ -d $id/outs/fastq_path ]]; then
     echo "FASTQ files are already present. $id will be skipped"
     trigger=0
@@ -63,7 +64,21 @@ do
     rm -r $id
   fi
 
-  # Checkpoint 3 --- Trigger ---
+  # Checkpoint
+  # Handle the occurrence of exceptions that would break the regular workflow
+  if [[ $id == "221014_A00643_0567_AHYMN3DSX3" ]]; then
+    echo "Exception invoked for $id. Filtering dual indices."
+    trigger=0
+    cellranger mkfastq --id=$id --run=$run --csv=$csv --filter-dual-index --delete-undetermined
+  fi
+  if [[ $id == "221014_A00643_0567_AHYMN3DSX3_HTO" ]]; then
+    echo "Exception invoked for $id. Filtering single indices + mask sec. index"
+    trigger=0
+    cellranger mkfastq --id=$id --run=$run --csv=$csv --filter-single-index \
+                       --use-bases-mask=Y28n*,I8n*,N10,Y90n*
+  fi
+
+  # Run cellranger mkfastq (depends on trigger)
   if [[ $trigger == 1 ]]; then
     cellranger mkfastq --id=$id --run=$run --csv=$csv --delete-undetermined
   fi

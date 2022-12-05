@@ -6,8 +6,8 @@
 #$ -pe multislot 2
 #$ -b n
 #$ -q all.q
-#$ -o log/tar2bcl.log
-#$ -e log/tar2bcl.log
+#$ -o log/tar2bcl_200701_A00643_0061_AHMNCCDRXX.log
+#$ -e log/tar2bcl_200701_A00643_0061_AHMNCCDRXX.log
 #$ -cwd
 
 # Print hostname & date
