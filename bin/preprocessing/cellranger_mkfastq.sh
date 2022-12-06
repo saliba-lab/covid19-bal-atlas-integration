@@ -76,7 +76,7 @@ do
     trigger=0
     run=${run%_HTO}
     cellranger mkfastq --id=$id --run=$run --csv=$csv --filter-single-index \
-                       --use-bases-mask=Y28n*,I8n*,N10,Y90n*
+                       --use-bases-mask=Y28n*,I8n*,N10,Y90n* --delete-undetermined
   fi
 
   # Run cellranger mkfastq (depends on trigger)

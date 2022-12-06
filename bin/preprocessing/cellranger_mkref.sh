@@ -38,6 +38,7 @@ out=GRCh38-viral
 # Go to output directory
 cd data/genomes
 
+# FASTA
 if [[ -e $fa ]]; then
   echo "FASTA present."
 else
@@ -47,17 +48,22 @@ else
 fi
 # grep ">" $fa checks for FASTA entries
 
-echo "Combining GTF files..."
-cat $gtf_1 > $gtf
-cat $gtf_2 >> $gtf
+# GTF
+if [[ -e $gtf ]]; then
+  echo "GTF present."
+else
+  echo "Combining GTF files..."
+  cat $gtf_1 > $gtf
+  cat $gtf_2 >> $gtf
+fi
 
-# Run cellranger mkref
+# Make reference genome
 if [[ -d $out ]]; then
   echo "$out already exists. Exiting."
   exit 1
 else
   echo "Creating reference..."
-  cellranger mkref --genome=$out --fasta=$fa --genes=$gtf --memgb=64
+  cellranger mkref --genome=$out --fasta=$fa --genes=$gtf --memgb=32
 fi
 
 echo "Done on" $(date)
