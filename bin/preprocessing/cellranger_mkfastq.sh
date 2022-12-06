@@ -74,6 +74,7 @@ do
   if [[ $id == "221014_A00643_0567_AHYMN3DSX3_HTO" ]]; then
     echo "Exception invoked for $id. Filtering single indices + mask sec. index"
     trigger=0
+    run=${run%_HTO}
     cellranger mkfastq --id=$id --run=$run --csv=$csv --filter-single-index \
                        --use-bases-mask=Y28n*,I8n*,N10,Y90n*
   fi
