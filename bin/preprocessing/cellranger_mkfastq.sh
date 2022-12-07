@@ -24,13 +24,17 @@ date
 
 # Define file PATHs
 basedir=$(pwd)
-samplesheets="$basedir/docs/samplesheets/mkfastq/*"
+samplesheets="$basedir/data/samplesheets/mkfastq/*"
 bcl="$basedir/data/raw/bcl/"
 fastq="data/raw/fastq/"
 
 # Change directory (cellranger does not accept PATHs as --id argument)
 cd $fastq
 echo "Location for FASTQs:" $(pwd)
+
+# Make sure samplesheets are up to date
+echo "Create samplesheets from overview"
+Rscript reports/overview_BCB.R
 
 # Iterate for all runs that have samplesheets
 for csv in $samplesheets
