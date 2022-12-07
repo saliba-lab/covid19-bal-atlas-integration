@@ -84,22 +84,27 @@ create_count_samplesheets <- function(data) {
   
   # Subset to columns included in samplesheet
   index <- match(c("libname", "TotalSeq-A", "path_1", 
-                   "run", "path_2", "flowcell"), names(data))
+                   "run", "path_2", "flowcell", "index"), names(data))
   libs <- data[, index]
+  libs$wd <- getwd()
   libs <- split(libs, libs$libname)
   for (i in names(libs)) {
     lib <- libs[[i]]
     csv <- data.frame(
-      lib = stringr::str_c(
-        libs[[i]][, c("path_1", "run", "path_2", "flowcell", "libname")], 
+      fastqs = stringr::str_c(
+        lib[, c("wd", "path_1", "run", "path_2", "flowcell", "libname")], 
         collapse = "/"),
       sample = i,
       library_type = "Gene Expression"
     )
+    if (stringr::str_detect(lib$index, "SI-TT")) {
+      csv$fastqs <- stringr::str_remove(csv$fastqs, paste0("/", csv$sample))
+    }
     if (!is.na(lib$`TotalSeq-A`)) {
+      lib$run <- paste0(lib$run, "_HTO")
       csv <- rbind(csv, c(
         stringr::str_c(
-          libs[[i]][, c("path_1", "run", "path_2", "flowcell")], 
+          lib[, c("path_1", "run", "path_2")], 
           collapse = "/"),
         paste0(i, "-HTO"), "Antibody Capture"
       ))
@@ -141,6 +146,13 @@ create_sample_overview <- function(data) {
   dpso <- samples$date - samples$onset
   samples$dpso[ind] <- dpso[ind]
   
+  # Calculate duration to endpoint
+  samples$endpoint_date <- patients$endpoint_date[match(
+    samples$patient, patients$id
+  )]
+  samples$endpoint_dpso <- samples$endpoint_date - samples$onset
+  samples$endpoint_dpso[is.na(samples$endpoint_dpso)] <- -10
+  
   # Add patient information
   ind <- match(samples$patient, patients$id)
   samples$sex <- patients$sex[ind]
@@ -164,17 +176,18 @@ create_sample_overview <- function(data) {
       shape = shape$sex[samples$sex], size = 4
     ) +
     ggplot2::geom_point(
-      ggplot2::aes(x = max(na.omit(dpso))+4, shape = endpoint), size = 4
+      ggplot2::aes(x = endpoint_dpso, shape = endpoint), size = 4
     ) +
     ggplot2::scale_shape_manual(values = shape$endpoint) +
     ggplot2::theme_classic(15) +
     ggplot2::theme(
       strip.text.y = ggplot2::element_text(angle = 0),
       panel.background = ggplot2::element_rect(fill = "grey90"),
-      panel.grid.major.y = ggplot2::element_line(color = "white", size = 4),
-      panel.grid.major.x = ggplot2::element_line(size = 1, color = "black"),
-      panel.grid.minor.x = ggplot2::element_line(size = .5, color = "black")
-    )
+      panel.grid.major.y = ggplot2::element_line(color = "white", size = 5),
+      panel.grid.major.x = ggplot2::element_line(size = 1, color = "grey50"),
+      panel.grid.minor.x = ggplot2::element_line(size = .5, color = "grey50")
+    ) +
+    ggplot2::labs(x = "Days post symptom onset", y = "Patient")
   
   return(plot)
 }
@@ -216,7 +229,7 @@ main <- function() {
     )
   shape$endpoint <- c(
     death = "\u271D",
-    release = "\u25CB",
+    release = "\u00BB",
     unknown = "\u003F"
   )
   
@@ -256,3 +269,4 @@ main <- function() {
 if (sys.nframe() == 0) {
   main()
 }
+

@@ -4,6 +4,9 @@ log/
 analysis/
 archive/
 
+# Count samplesheets
+docs/samplesheets/count/
+
 # R files
 .Rhistory
 
