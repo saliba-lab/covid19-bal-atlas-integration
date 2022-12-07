@@ -200,8 +200,8 @@ main <- function() {
   url <- "https://nubes.helmholtz-berlin.de/s/LnJn5z8wB2o2NrJ"
   url <- paste0(url, "/download")
   
-  mkfastq_samplesheets <- "docs/samplesheets/mkfastq/"
-  count_library_csv <- "docs/samplesheets/count/"
+  mkfastq_samplesheets <- "data/samplesheets/mkfastq/"
+  count_library_csv <- "data/samplesheets/count/"
   hto_indices <- "docs/HTO-indices.csv"
   plot_dir <- paste0("analysis/BCB/overview/")
   
