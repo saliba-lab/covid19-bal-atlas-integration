@@ -104,7 +104,7 @@ create_count_samplesheets <- function(data) {
       lib$run <- paste0(lib$run, "_HTO")
       csv <- rbind(csv, c(
         stringr::str_c(
-          lib[, c("path_1", "run", "path_2")], 
+          lib[, c("wd", "path_1", "run", "path_2")], 
           collapse = "/"),
         paste0(i, "-HTO"), "Antibody Capture"
       ))
