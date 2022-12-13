@@ -20,7 +20,7 @@ csv=data/BCh/qc_colData.csv
 plot_qc=analysis/BCB/qc
 
 # Download data
-export PATH=~/miniconda3/envs/covid19-bal-atlas-scib/bin:$PATH
+export PATH=~/miniconda3/envs/covid19-bal-atlas-integration/bin:$PATH
 python bin/dataset-BCB.py $raw
 
 # Calculate QC metrics

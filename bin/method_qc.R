@@ -23,34 +23,18 @@ suppressMessages({
 #' @param assay Name of main assay
 #' 
 #' @returns The function output
-add_quality_metrics <- function(ds = NULL, csv = NULL, xls = NULL,
-                                assay = "X") {
+add_quality_metrics <- function(ds = NULL, assay = "X") {
   
   stopifnot(
     class(ds) == "SingleCellExperiment",
-    !is.null(csv),
-    !is.null(xls),
+    !is.null(libs),
+    !is.null(samples),
     assay %in% names(ds@assays)
   )
   
-  # Assign sample name
-  index <- csv$library_id
-  names(index) <- rownames(csv)
-  ds$sample <- index[ds$sample_id]
-  
-  # Add sample metadata
-  cols_keep <- c("type", "patient", "dpso", "status", "cohort")
-  ds@colData <- cbind(ds@colData, xls[match(ds$sample, xls$sample), cols_keep])
-  
   # Add QC metrics
-  
-  # Library size
   ds$libsize <- Matrix::colSums(ds@assays@data[[assay]])
-  
-  # Features
   ds$nfeatures <- Matrix::colSums(ds@assays@data[[assay]] > 0)
-  
-  # Percent mitochrondrial counts
   index <- which(stringr::str_detect(rownames(ds), "^MT-"))
   ds$percent.mt <- round(
     Matrix::colSums(ds@assays@data[[assay]][index, ]) / ds$libsize, 3
@@ -368,9 +352,9 @@ main <- function() {
   args <- docopt::docopt(doc)
   
   in_file <- args[["<file>"]]
-  in_file_viral <- paste0(dirname(in_file), "/SCoV2_", basename(in_file))
-  in_file_csv <- "docs/BCB_aggr.csv"
-  in_file_xls <- "docs/BCB_overview.xlsx"
+  in_file_alt <- paste0(dirname(in_file), "/alt_", basename(in_file))
+  in_file_xls <- "docs/overview.xlsx"
+  h5file <- "data/BCB/filtered_feature_bc_matrix.h5"
   
   out_file <- stringr::str_replace(in_file, ".h5ad", "_qc_colData.csv")
   
@@ -383,14 +367,54 @@ main <- function() {
   # Read data ------------------------------------------------------------------
   message("Reading data ...")
   ds <- read_h5ad(in_file)
-  vs <- read_h5ad(in_file_viral)
-  csv <- read.csv(in_file_csv)
-  xls <- readxl::read_excel(in_file_xls, "samples")
+  vs <- read_h5ad(in_file_alt)
+  samples <- readxl::read_excel(in_file_xls, "samples")
+  libs <- readxl::read_excel(in_file_xls, "libraries")
+  
+  # Add library info -----------------------------------------------------------
+  
+  ds@colData <- cbind(ds@colData, libs[match(ds$sample_id ,libs$libname), ])
+  
+  # Add virus counts
+  index <- rownames(vs)
+  index <- index[stringr::str_detect(index, "Hashtag", negate = TRUE)]
+  for (i in index) {
+    key <- paste0("virus_", i)
+    ds[[key]] <- as.numeric(vs[i, ]@assays@data$X)
+  }
+  
+  # Add hashtag counts
+  index <- rownames(vs)
+  index <- index[stringr::str_detect(index, "Hashtag", negate = FALSE)]
+  ht <- t(as.matrix(vs[index, ]@assays@data$X))
+  dimnames(ht) <- list(colnames(ds), index)
+  
+  
+  # Demultiplex samples from libraries -----------------------------------------
+  
+  ind <- libs$libname[which(!is.na(libs$`TotalSeq-A`))]
+  for (i in ind) {
+    index <- libs$sample[libs$libname == i]
+    index <- stringr::str_split(index, ",", simplify = TRUE)[1, ]
+    
+    index <- stringr::str_split(index, ":", simplify = TRUE)
+    index <- as.data.frame(index)
+    colnames(index) <- c("Hashtag", "Sample")
+    index$Hashtag <- paste0("Hashtag", index$Hashtag, "_TotalA")
+    
+    cells <- colnames(ds)[ds$libname == i]
+    df <- ht[cells, index$Hashtag]
+    
+    # TODO: Make function to assign hashtag labels
+    
+  }
+  
+  # Add sample info ------------------------------------------------------------
   
   # Add metrics ----------------------------------------------------------------
   message("Adding metadata & quality metrics")
-  ds$scov2 <- Matrix::colSums(vs@assays@data$X)
-  ds <- add_quality_metrics(ds, csv, xls, assay = "X")
+  
+  ds <- add_quality_metrics(ds, assay = "X")
   
   # Assign quality labels
   qc <- data.frame(
@@ -412,9 +436,9 @@ main <- function() {
   plot_qc_violin(ds, log_y = TRUE, pl.dir = out_dir, pl.write = TRUE)
   # TODO: Add filter option (e.g. qc_adaptive to look at plot after filtering)
   
-  plot_qc_violin(ds, color = "patient", log_y = TRUE, nrow = 3,
-                 pl.dir = out_dir, pl.write = TRUE, pl.height = 12)
-  plot_qc_violin(ds, color = "sample", log_y = TRUE, nrow = 3,
+  plot_qc_violin(ds, color = "sample_id", log_y = TRUE, nrow = 3,
+                 pl.dir = out_dir, pl.write = TRUE, pl.height = 12, pl.width=12)
+  plot_qc_violin(ds, color = "sample_id", log_y = TRUE, nrow = 3,
                  pl.dir = out_dir, pl.write = TRUE, pl.height = 8)
   
   plot_count_association(ds, pl.dir=out_dir, pl.write=T, pl.width=6)
@@ -423,7 +447,7 @@ main <- function() {
                                      pl.dir=out_dir, pl.write=T, pl.width=7)
   }
   
-  key <- "sample"
+  key <- "sample_id"
   ds[[key]] <- factor(ds[[key]])
   pdf(file = paste0(out_dir, "scatter_metric_sample.pdf"))
   for (i in levels(ds[[key]])) {
