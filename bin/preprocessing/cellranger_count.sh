@@ -24,7 +24,6 @@ samplesheets=$base_dir/data/samplesheets/count
 out=$base_dir/data/libraries/
 ref=$base_dir/data/genomes/GRCh38-viral
 htoref=/home/odietric/SIGA/databases/cellranger_refs/HTO-features.csv
-trigger=1
 
 # Create output directory
 if [[ -e $out ]]; then
@@ -49,6 +48,7 @@ do
   sample=$(basename $i)
   sample=${sample%.csv}
   echo $sample
+  trigger=1
 
   # Checkpoint
   # Presence of output files

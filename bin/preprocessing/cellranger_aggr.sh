@@ -1,8 +1,8 @@
 #!/bin/bash
 
 #SBATCH --job-name=aggr
-#SBATCH --output=log/cellranger/aggr.log
-#SBATCH --error=log/cellranger/aggr.log
+#SBATCH --output=log/cellranger_aggr.log
+#SBATCH --error=log/cellranger_aggr.log
 #SBATCH --partition=cpu
 #SBATCH --nodes=1
 #SBATCH --ntasks=10
@@ -16,16 +16,16 @@
 
 # Choose PATH for the cellranger version
 export PATH=/vol/biotools/bin:$PATH
-export PATH=/vol/projects/odietric/bin/cellranger/cellranger-5.0.1:$PATH
+export PATH=/vol/biotools/bin/cellranger-7.0.0:$PATH
 
 # Set variables
 base_dir=$(pwd)
-out=$base_dir/data/processed
-csv=$base_dir/docs/combined_aggr.csv
-name=combined
+out=$base_dir/data/libraries
+csv=$base_dir/docs/aggr.csv
+name=BCB
 
 # Create aggr.csv from all samples
-echo "library_id,molecule_h5" > $csv
+echo "sample_id,molecule_h5" > $csv
 for i in $out/*
 do
 
