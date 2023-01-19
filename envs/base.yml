@@ -27,6 +27,7 @@ dependencies:
   - r-viridis
   - r-remotes
   - spyder
+  - jupyter
   - igraph
   - r-ggraph
   - r-shinycssloaders

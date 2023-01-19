@@ -10,6 +10,7 @@ dependencies:
   - scvi-tools
   - pymde
   - spyder
+  - jupyter
   - pip
   - pip:
       - scarches
