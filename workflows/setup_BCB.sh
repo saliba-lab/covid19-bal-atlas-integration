@@ -16,7 +16,7 @@
 
 # Variables
 raw=data/BCB/raw.h5ad
-csv=data/BCh/qc_colData.csv
+csv=data/BCB/qc_colData.csv
 plot_qc=analysis/BCB/qc
 
 # Download data

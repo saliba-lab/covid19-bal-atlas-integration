@@ -393,6 +393,7 @@ main <- function() {
   # Demultiplex samples from libraries -----------------------------------------
   
   ind <- libs$libname[which(!is.na(libs$`TotalSeq-A`))]
+  ds$hto_clust <- "None"
   for (i in ind) {
     index <- libs$sample[libs$libname == i]
     index <- stringr::str_split(index, ",", simplify = TRUE)[1, ]
@@ -402,14 +403,45 @@ main <- function() {
     colnames(index) <- c("Hashtag", "Sample")
     index$Hashtag <- paste0("Hashtag", index$Hashtag, "_TotalA")
     
+    # Sample overview
     cells <- colnames(ds)[ds$libname == i]
+    df <- as.data.frame(ht[cells, ])
+    df <- log10(df+1)
+    df <- tidyr::gather(df, "hto", "count")
+    
+    ggplot2::ggplot(df, ggplot2::aes(hto, count)) +
+      ggplot2::geom_point(position = "jitter", size=.5, shape = 21, alpha = .5) +
+      ggplot2::geom_violin(scale = "width", col = "navy") +
+      ggplot2::labs(title = libs$sample[libs$libname == i]) +
+      ggplot2::theme(
+        axis.text.x = ggplot2::element_text(angle = 45, hjust=1, vjust=1)
+      )
+    fn <- paste0(out_dir, "demux", "_", i, ".", "png")
+    ggplot2::ggsave(fn, width = 12, height = 6)
+    
+    # Barcode clusters
     df <- ht[cells, index$Hashtag]
+    df <- as.data.frame(log10(df+1))
+    df$clust <- factor(kmeans(df, nrow(index)+2)$cluster)
+    ds$hto_clust[ds$libname == i] <- paste0(i, ":", as.character(df$clust))
+    df$bc <- row.names(df)
+    df <- tidyr::gather(df, "hto", "count", -clust, -bc)
     
-    # TODO: Make function to assign hashtag labels
+    ggplot2::ggplot(df, ggplot2::aes(hto, count, col = clust)) +
+      ggplot2::geom_point(position = "jitter", size=.5, shape = 21, alpha = .5) +
+      ggplot2::geom_violin(scale = "width", col = "navy") +
+      ggplot2::labs(title = libs$sample[libs$libname == i]) +
+      ggplot2::theme_light(15) +
+      ggplot2::theme(
+        axis.text.x = ggplot2::element_text(angle = 45, hjust=1, vjust=1)
+      ) +
+      ggplot2::guides(
+        color = ggplot2::guide_legend(override.aes = list(size=5, shape=20))
+      )
+    fn <- paste0(out_dir, "demux", "_", i, "_", "clusters", ".", "png")
+    ggplot2::ggsave(fn, width = 6, height = 6)
     
-  }
-  
-  # Add sample info ------------------------------------------------------------
+    }
   
   # Add metrics ----------------------------------------------------------------
   message("Adding metadata & quality metrics")

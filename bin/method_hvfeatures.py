@@ -25,7 +25,7 @@ def select_features(adata):
     """
     import scanpy as sc
     
-    adata.obs["batch"] = adata.obs["patient"].astype("str")
+    adata.obs["batch"] = adata.obs["sample"].astype("str")
     adata.X = adata.layers["cp10k"].copy()
     adata.uns["log1p"] = {'base': None}
     
