@@ -48,7 +48,7 @@ main <- function() {
   
   # Read data ------------------------------------------------------------------
   message("Reading data ...")
-  ds <- read_h5ad(in_file, obsm = FALSE)
+  ds <- read_h5ad(in_file, obsm = FALSE, layers = "cp10k")
   
   # Run method -----------------------------------------------------------------
   message("Running fastMNN...")
