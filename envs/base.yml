@@ -1,4 +1,4 @@
-name: covid19-bal-atlas-scran
+name: covid19-bal-atlas
 channels:
   - conda-forge
   - bioconda
