@@ -32,7 +32,7 @@ def get_combined():
     
     aggr_csv = "data/BCB/aggregation.csv"
     aggr_url = "https://nubes.helmholtz-berlin.de/s/Z3KMkrYnirwfCqb"
-    aggr_url = os.path.join(url, "download")
+    aggr_url = os.path.join(aggr_url, "download")
 
     # Download data -----------------------------------------------------------
     
