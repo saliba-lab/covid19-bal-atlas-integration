@@ -41,8 +41,13 @@ summarize_groups <- function (
 #' @returns Data.frame containing factors of group membership
 #' 
 cluster_cells <- function(ds = NULL, emb = "X_mnn", alg = "louvain",
-                          dims = 30,
+                          dims = ncol(ds@int_colData$reducedDims[[emb]]),
                           res_from = 0.1, res_to = 3, res_by = 0.1) {
+  
+  stopifnot(
+    class(ds) == "SingleCellExperiment",
+    !is.null(emb)
+  )
   
   mat <- SingleCellExperiment::reducedDim(ds, emb)
   g <- scran::buildSNNGraph(t(mat[, 1:dims]))
@@ -73,7 +78,7 @@ cluster_cells <- function(ds = NULL, emb = "X_mnn", alg = "louvain",
 #' 
 #' @returns Data.frame
 #' 
-run_AUCell <- function(lds = NULL, markers = NULL, batch = "patient", 
+run_AUCell <- function(ds = NULL, markers = NULL, batch = "patient", 
                        assay = "X") {
   
   stopifnot(
@@ -93,10 +98,30 @@ run_AUCell <- function(lds = NULL, markers = NULL, batch = "patient",
     # Run AUCell
     cells_rankings <- AUCell::AUCell_buildRankings(mat)
     cells_AUC <- AUCell::AUCell_calcAUC(markers, cells_rankings)
-    data[[i]] <- as.data.frame(t(cells_AUC@assays@data$AUC))
+    data[[i]] <- cells_AUC
   }
-  data <- dplyr::bind_rows(data)
-  data <- data[match(rownames(data), colnames(ds)), ]
+  
+  cells_AUC <- data[[1]]
+  for (i in 2:length(data)) {
+    cells_AUC@colData <- rbind(cells_AUC@colData, data[[i]]@colData)
+    cells_AUC@assays@data$AUC <- cbind(
+      cells_AUC@assays@data$AUC, data[[i]]@assays@data$AUC
+      )
+  }
+  thresh <- AUCell::AUCell_exploreThresholds(cells_AUC)
+  
+  data <- data.frame(
+    row.names = rownames(cells_AUC@colData), 
+    t(cells_AUC@assays@data$AUC)
+    )
+  data <- data[colnames(ds), ]
+  
+  for (i in names(thresh)) {
+    thresh[[i]] <- thresh[[i]]$aucThr$selected[[1]]
+  }
+  
+  names(data) <- names(unlist(thresh))
+  attr(data, "thresh") <- unlist(thresh)
   
   return(data)
 }
@@ -373,9 +398,9 @@ summarize_overlapping_rows <- function(df=NULL, x="x", y="y", FUN=mean,
 #' 
 plot_embedding <- function(ds=NULL, color=NA,
                            embedding=names(ds@int_colData$reducedDims)[1], 
-                           assay = "X", cells = colnames(ds),
+                           assay = names(ds@assays)[1], cells = colnames(ds),
                            dims=1:2, pt.size=.1, pt.shape=20, 
-                           pt.stroke=.1, pt.alpha=1, 
+                           pt.stroke=.25, pt.alpha=1, 
                            pl.write=FALSE, pl.height=6, pl.width=12
 ) {
   
@@ -383,6 +408,7 @@ plot_embedding <- function(ds=NULL, color=NA,
     class(ds) == "SingleCellExperiment"
   )
   
+  # Fetch data
   df <- ds@int_colData$reducedDims[[embedding]][, dims]
   df <- as.data.frame(df)
   names(df) <- c("x", "y")
@@ -419,6 +445,9 @@ plot_embedding <- function(ds=NULL, color=NA,
   }
   
   # Subset
+  if (is.numeric(cells)) {
+    cells <- sample(colnames(ds), cells)
+  }
   index <- match(cells, colnames(ds))
   df <- df[index, ]
   

@@ -26,6 +26,8 @@ main <- function() {
   in_file <- args[["<file>"]]
   out_file <- stringr::str_replace(in_file, ".h5ad", "_doublets.tsv")
   
+  key <- "counts_seurat2000_scVI_n30l1h128_umap"
+  
   # Read data ------------------------------------------------------------------
   message("Reading data...")
   
@@ -40,6 +42,18 @@ main <- function() {
   
   index <- names(ds@colData)
   data <- ds@colData[, index[stringr::str_detect(index, "scDbl")]]
+  
+  # Plot
+  plot_embedding(ds, embedding = key, color = "scDblFinder.score", 
+                 pt.stroke = .25)
+  fn <- paste0(out_dir, key, "_", "doublet-score", ".", "png")
+  ggplot2::ggsave(fn, height = 6, width = 7, bg = "white")
+  
+  # Plot
+  plot_embedding(ds, embedding = key, color = "scDblFinder.class", 
+                 pt.stroke = .25)
+  fn <- paste0(out_dir, key, "_", "doublet-class", ".", "png")
+  ggplot2::ggsave(fn, height = 6, width = 7, bg = "white")
   
   # Write data -----------------------------------------------------------------
   message(paste("Writing data to", out_file))
