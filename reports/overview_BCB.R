@@ -120,7 +120,7 @@ create_count_samplesheets <- function(data) {
 #' 
 #' @param data Data.frame of sequenced libraries
 #' 
-create_sample_overview <- function(data) {
+create_sample_overview <- function(data, file, color, shape) {
   
   # Combine library, sample & patient data
   patients <- readxl::read_excel(file, "patients")
@@ -237,7 +237,6 @@ main <- function() {
   download.file(url, file)
   hto_ind <- read.csv(hto_indices)
   data <- read_libaries(file)
-  #data <- add_patient_overview(data, file)
   
   # Mkfastq samplesheets -------------------------------------------------------
   
@@ -257,7 +256,7 @@ main <- function() {
   
   # Sample overview ------------------------------------------------------------
   
-  create_sample_overview(data)
+  create_sample_overview(data, file, color, shape)
   
   # Save
   fn <- paste0(plot_dir, "sample-overview.png")
