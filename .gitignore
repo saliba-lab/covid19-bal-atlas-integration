@@ -10,6 +10,7 @@ docs/samplesheets/count/
 # R files
 .Rhistory
 
-# Spyder files
+# Python files
 .spyproject/
 .idea/
+.ipynb_checkpoints/
