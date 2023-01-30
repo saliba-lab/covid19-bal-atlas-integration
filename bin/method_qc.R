@@ -27,8 +27,6 @@ add_quality_metrics <- function(ds = NULL, assay = "X") {
   
   stopifnot(
     class(ds) == "SingleCellExperiment",
-    !is.null(libs),
-    !is.null(samples),
     assay %in% names(ds@assays)
   )
   
