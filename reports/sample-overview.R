@@ -237,6 +237,7 @@ main <- function() {
   download.file(url, file)
   hto_ind <- read.csv(hto_indices)
   data <- read_libaries(file)
+  #data <- add_patient_overview(data, file)
   
   # Mkfastq samplesheets -------------------------------------------------------
   

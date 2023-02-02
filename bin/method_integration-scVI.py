@@ -5,7 +5,7 @@ Integration by scVI
 
 Usage:
     method_integration-scVI.py [options] <file>
-    
+
 Options:
     -h --help           Show this screen.
     -g --gpu		Use GPU for training of the VAE
@@ -47,11 +47,12 @@ def main():
 
     # Variables
     args = docopt(__doc__)
-    
-    in_file = args["<file>"]    
-    out_file = in_file
+
+    in_file = args["<file>"]
     gpu_flag = args["--gpu"]
-    
+
+    out_file = in_file
+
     print(f"Reading dataset from '{in_file}'")
     ds = sc.read(in_file)
 

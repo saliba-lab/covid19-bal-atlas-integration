@@ -53,7 +53,7 @@ main <- function() {
   # Run method -----------------------------------------------------------------
   message("Running fastMNN...")
   
-  assays <- c("cp10k")
+  assays <- c("X")
   hvg_method <- ds@metadata$hvg_keys$keys
   dims <- c(10,30,50)
   neighbors <- c(10)
