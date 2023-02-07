@@ -24,3 +24,4 @@ dependencies:
   - r-ggraph
   - r-reticulate
   - r-cellassign
+  - r-clustree
