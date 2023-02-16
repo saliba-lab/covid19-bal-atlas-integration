@@ -3,9 +3,9 @@
 #SBATCH --job-name=mapping-HLCA
 #SBATCH --output=log/mapping-HLCA.log
 #SBATCH --error=log/mapping-HLCA.log
-#SBATCH --partition=cpu
+#SBATCH --partition=gpu
 #SBATCH --nodes=1
-#SBATCH --ntasks=20
+#SBATCH --ntasks=2
 #SBATCH --threads-per-core=1
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=128G

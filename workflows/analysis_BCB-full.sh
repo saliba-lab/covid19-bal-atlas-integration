@@ -1,8 +1,8 @@
 #!/bin/bash
 
-#SBATCH --job-name=analysis_combined
-#SBATCH --output=log/analysis_combined.log
-#SBATCH --error=log/analysis_combined.logs
+#SBATCH --job-name=analysis_BCB-full
+#SBATCH --output=log/analysis_BCB-full.log
+#SBATCH --error=log/analysis_BCB-full.log
 #SBATCH --partition=cpu
 #SBATCH --nodes=1
 #SBATCH --ntasks=10
@@ -20,6 +20,8 @@ unset PYTHONPATH
 raw=data/BCB/raw.h5ad
 csv=analysis/BCB/qc/colData.csv
 filtered=data/BCB/full.h5ad
+
+unset PYTHONPATH
 
 # Setup
 export PATH=~/miniconda3/envs/covid19-bal-atlas-integration/bin:$PATH
