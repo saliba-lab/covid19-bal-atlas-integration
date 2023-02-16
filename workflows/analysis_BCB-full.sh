@@ -1,8 +1,8 @@
 #!/bin/bash
 
-#SBATCH --job-name=analysis_combined
-#SBATCH --output=log/analysis_combined.log
-#SBATCH --error=log/analysis_combined.logs
+#SBATCH --job-name=analysis_BCB-full
+#SBATCH --output=log/analysis_BCB-full.log
+#SBATCH --error=log/analysis_BCB-full.log
 #SBATCH --partition=cpu
 #SBATCH --nodes=1
 #SBATCH --ntasks=10
@@ -19,6 +19,8 @@ raw=data/BCB/raw.h5ad
 csv=data/BCB/qc_colData.csv
 filtered=data/BCB/full.h5ad
 
+unset PYTHONPATH
+
 # Setup
 export PATH=~/miniconda3/envs/covid19-bal-atlas-integration/bin:$PATH
 python bin/method_filter.py -o $filtered $raw
@@ -27,7 +29,7 @@ python bin/method_hvfeatures.py $filtered
 
 # Integration
 python bin/method_integration-PCA.py $filtered
-python bin/method_integration-scVI.py --gpu $filtered # use --gpu if present
+python bin/method_integration-scVI.py $filtered # use --gpu if present
 
 # Integration (R)
 export PATH=~/miniconda3/envs/covid19-bal-atlas-scran/bin:$PATH
