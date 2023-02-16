@@ -4,6 +4,13 @@ log/
 analysis/
 archive/
 
+# Manuscript intermediates (except instructions)
+docs/manuscript/*.pdf
+docs/manuscript/*.log
+docs/manuscript/*.synctex.gz
+docs/manuscript/*.out
+docs/manuscript/*.aux
+
 # Count samplesheets
 docs/samplesheets/count/
 

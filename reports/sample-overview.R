@@ -8,16 +8,20 @@ Options:
     -h --help     Show this screen.
 " -> doc
 
-#' Read sample overview
+#' Clean dataset overview
+#'
+#' @param overview List of data.frames with aspects of the dataset
 #' 
-#' @param file Excel file with dataset overview
+#' @returns list
 #' 
-#' @returns Data.frame with sample overview
-#' 
-read_libaries <- function(file) {
+clean_dataset_overview <- function(overview) {
   
-  # Read into memory
-  data <- readxl::read_excel(file, "libraries")
+  # Extract sheets -------------------------------------------------------------
+  data <- overview$libraries
+  patients <- overview$patients
+  samples  <- overview$samples
+  
+  # Libraries ------------------------------------------------------------------
   
   # Remove empty rows
   index <- which(data$run != "")
@@ -31,16 +35,48 @@ read_libaries <- function(file) {
   data$path_1 <- "data/raw/fastq"
   data$path_2 <- "outs/fastq_path"
   
-  return(data)
+  # Samples --------------------------------------------------------------------
+  
+  # Calculate DPSO
+  samples$onset <- patients[["Hospital-admission"]][match(
+    samples$patient, patients$id
+  )]
+  ind <- is.na(samples$dpso)
+  dpso <- samples$date - samples$onset
+  samples$dpso[ind] <- dpso[ind]
+  
+  # Calculate duration to endpoint
+  samples$endpoint_date <- patients$endpoint_date[match(
+    samples$patient, patients$id
+  )]
+  samples$endpoint_dpso <- samples$endpoint_date - samples$onset
+  samples$endpoint_dpso[is.na(samples$endpoint_dpso)] <- -10
+  
+  # Add patient information
+  ind <- match(samples$patient, patients$id)
+  samples$sex <- patients$sex[ind]
+  samples$endpoint <- patients$endpoint[ind]
+  
+  # Replace sheets -------------------------------------------------------------
+  overview$libraries <- data
+  overview$patients <- patients
+  overview$samples <- samples
+  
+  return(overview)
 }
+
 
 #' Create cellranger mkfastq samplesheets
 #' 
-#' @param data Data.frame with sample overview
+#' @param overview List of data.frames with dataset overview
 #' 
 #' @returns List with samplesheets
 #' 
-create_mkfastq_samplesheets <- function(data, hto_ind) {
+create_mkfastq_samplesheets <- function(overview) {
+  
+  # Extract sheet
+  data <- overview$libraries
+  hto_ind <- overview$hto_indices
   
   # Subset to columns included in samplesheet
   index <- match(c("lane", "libname", "index", "run"), names(data))
@@ -76,11 +112,14 @@ create_mkfastq_samplesheets <- function(data, hto_ind) {
 
 #' Create cellranger count library CSVs
 #' 
-#' @param file Excel file with sample overview
+#' @param overview List of data.frames with dataset overview
 #' 
 #' @returns Character of FASTQ paths
 #' 
-create_count_samplesheets <- function(data) {
+create_count_samplesheets <- function(overview) {
+  
+  # Extract sheet
+  data <- overview$libraries
   
   # Subset to columns included in samplesheet
   index <- match(c("libname", "TotalSeq-A", "path_1", 
@@ -118,13 +157,16 @@ create_count_samplesheets <- function(data) {
 
 #' Create sample overview
 #' 
-#' @param data Data.frame of sequenced libraries
+#' @param overview List of data.frames with dataset overview
+#' @param color Colors used in graph
+#' @param shape Shapes used in graph
 #' 
-create_sample_overview <- function(data, file, color, shape) {
+create_sample_overview <- function(overview, color, shape) {
   
-  # Combine library, sample & patient data
-  patients <- readxl::read_excel(file, "patients")
-  samples  <- readxl::read_excel(file, "samples")
+  # Extract sheets
+  data <- overview$libraries
+  patients <- overview$patients
+  samples  <- overview$samples
   
   # Subset to sequenced samples
   sind <- stringr::str_split(data$sample, ",")
@@ -137,26 +179,6 @@ create_sample_overview <- function(data, file, color, shape) {
   sind <- unlist(sind)
   samples <- samples[samples$sample %in% sind, ]
   samples <- samples[samples$cohort %in% c("A", "B", "C", "Recovery"), ]
-  
-  # Calculate DPSO
-  samples$onset <- patients[["Hospital-admission"]][match(
-    samples$patient, patients$id
-  )]
-  ind <- is.na(samples$dpso)
-  dpso <- samples$date - samples$onset
-  samples$dpso[ind] <- dpso[ind]
-  
-  # Calculate duration to endpoint
-  samples$endpoint_date <- patients$endpoint_date[match(
-    samples$patient, patients$id
-  )]
-  samples$endpoint_dpso <- samples$endpoint_date - samples$onset
-  samples$endpoint_dpso[is.na(samples$endpoint_dpso)] <- -10
-  
-  # Add patient information
-  ind <- match(samples$patient, patients$id)
-  samples$sex <- patients$sex[ind]
-  samples$endpoint <- patients$endpoint[ind]
   
   # Order
   ind <- dplyr::summarise(
@@ -202,7 +224,6 @@ main <- function() {
   
   mkfastq_samplesheets <- "data/samplesheets/mkfastq/"
   count_library_csv <- "data/samplesheets/count/"
-  hto_indices <- "docs/HTO-indices.csv"
   plot_dir <- paste0("analysis/BCB/overview/")
   
   # Create directories
@@ -226,7 +247,7 @@ main <- function() {
   shape$sex <- c(
     "Male" = "\u2642", 
     "Female" = "\u2640"
-    )
+  )
   shape$endpoint <- c(
     death = "\u271D",
     release = "\u00BB",
@@ -234,14 +255,21 @@ main <- function() {
   )
   
   # Read data ------------------------------------------------------------------
+  message("Reading data...")
+  
   download.file(url, file)
-  hto_ind <- read.csv(hto_indices)
-  data <- read_libaries(file)
-  #data <- add_patient_overview(data, file)
+  ov <- list()
+  for (i in readxl::excel_sheets(file)) {
+    ov[[i]] <- readxl::read_excel(file, i)
+  }
+  
+  # Clean libraries ------------------------------------------------------------
+  
+  ov <- clean_dataset_overview(ov)
   
   # Mkfastq samplesheets -------------------------------------------------------
   
-  sheets <- create_mkfastq_samplesheets(data, hto_ind)
+  sheets <- create_mkfastq_samplesheets(ov)
   for (i in names(sheets)) {
     csv <- paste0(mkfastq_samplesheets, i, ".csv")
     write.csv(sheets[[i]], csv, row.names = FALSE)
@@ -249,7 +277,7 @@ main <- function() {
   
   # Count samplesheets ---------------------------------------------------------
   
-  sheets <- create_count_samplesheets(data)
+  sheets <- create_count_samplesheets(ov)
   for (i in names(sheets)) {
     csv <- paste0(count_library_csv, i, ".csv")
     write.csv(sheets[[i]], csv, row.names = FALSE)
@@ -257,9 +285,9 @@ main <- function() {
   
   # Sample overview ------------------------------------------------------------
   
-  create_sample_overview(data, file, color, shape)
+  create_sample_overview(ov, color, shape)
   
-  # Save
+  # Plot
   fn <- paste0(plot_dir, "sample-overview.png")
   ggplot2::ggsave(fn, width = 12, height = 6)
   
