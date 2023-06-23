@@ -41,7 +41,7 @@ python bin/method_mapping-HLCA.py $filtered
 # Annotation
 export PATH=~/miniconda3/envs/covid19-bal-atlas-scran/bin:$PATH
 Rscript bin/method_doubletFinder.R $filtered
-Rscript bin/method_embed-cluster.R -o $plot_ann $core
+Rscript bin/method_embed-cluster.R -o $plot_ann $filtered
 
 # Metrics
 export PATH=~/miniconda3/envs/covid19-bal-atlas-scib/bin:$PATH
