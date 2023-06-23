@@ -36,7 +36,7 @@ def map_HLCA(query, ref):
     print("Preparing query dataset...")
     query = query.copy()
     query.X = query.layers["counts"]
-    query.obs["dataset"] = query.obs.sample
+    query.obs["dataset"] = query.obs["sample"]
     query.obs["scanvi_label"] = "unlabeled"
     query.var["gene_name"] = query.var.index.tolist()
     query.var.index = query.var["gene_ids"].values
