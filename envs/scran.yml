@@ -25,3 +25,4 @@ dependencies:
   - r-reticulate
   - r-cellassign
   - r-clustree
+  - r-irkernel
