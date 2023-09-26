@@ -17,4 +17,4 @@ dependencies:
   - r-viridis
   - r-remotes
   - notebook
-  - nb_conda_kernels
+  - r-irkernel
