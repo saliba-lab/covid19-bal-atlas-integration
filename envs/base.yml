@@ -8,11 +8,15 @@ dependencies:
   - r-docopt
   - rpy2
   - scanpy
+  - louvain
+  - scvi-tools
   - r-seurat
-  - r-biocmanager
+  - r-hdf5r
   - bioconductor-scran
   - bioconductor-scater
-  - bioconductor-zellkonverter
+  - bioconductor-batchelor
+  - bioconductor-aucell
+  - bioconductor-scdblfinder
   - r-readxl
   - r-viridis
   - r-remotes
