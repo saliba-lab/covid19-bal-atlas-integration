@@ -1,0 +1,25 @@
+name: covid19-bal-atlas
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - docopt
+  - r-docopt
+  - rpy2
+  - scanpy
+  - louvain
+  - scvi-tools
+  - r-seurat
+  - r-hdf5r
+  - bioconductor-rhdf5
+  - bioconductor-scran
+  - bioconductor-scater
+  - bioconductor-batchelor
+  - bioconductor-aucell
+  - bioconductor-scdblfinder
+  - r-readxl
+  - r-viridis
+  - r-remotes
+  - notebook
+  - r-irkernel

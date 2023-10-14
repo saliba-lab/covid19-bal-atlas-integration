@@ -14,14 +14,18 @@
 #SBATCH --mail-user=oliver.dietrich@helmholtz-hiri.de
 #SBATCH --clusters=bioinf
 
-# Set PATH
-export PATH=~/miniconda3/envs/covid19-bal-atlas/bin:$PATH
+unset PYTHONPATH
 
 # Variables
 raw=data/BCB/raw.h5ad
-csv=data/BCh/qc_colData.csv
+csv=analysis/BCB/qc/colData.csv
 plot_qc=analysis/BCB/qc
 
-# Setup
+# Download data
+export PATH=~/miniconda3/envs/covid19-bal-atlas-integration/bin:$PATH
 python bin/dataset-BCB.py $raw
+
+# Calculate QC metrics
+export PATH=~/miniconda3/envs/covid19-bal-atlas-scran/bin:$PATH
+Rscript reports/sample-overview.R
 Rscript bin/method_qc.R $raw

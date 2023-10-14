@@ -19,14 +19,12 @@ read_layer_h5ad <- function(file = NULL, name = "X") {
   X <- Matrix::sparseMatrix(
     i = rhdf5::h5read(file, paste0(name, "/indices")) + 1,
     p = rhdf5::h5read(file, paste0(name, "/indptr")),
-    x = as.numeric(rhdf5::h5read(file, paste0(name, "/data"))),
+    x = as.integer(rhdf5::h5read(file, paste0(name, "/data"))),
     dims = c(
       length(rhdf5::h5read(file, "var/_index")), 
       length(rhdf5::h5read(file, "obs/_index"))
     )
   )
-  
-  dim(X)
   
   return(X)
 }
@@ -93,7 +91,7 @@ read_obsm_h5ad <- function(file) {
   obsm <- list()
   for (i in names(data)) {
     
-    if (class(data[[i]]) == "list") {
+    if (all(class(data[[i]]) == "list")) {
       obsm[[i]] <- data.frame(
         row.names = data[[i]][["_index"]]
       )
@@ -119,7 +117,7 @@ read_obsm_h5ad <- function(file) {
 #' 
 #' @returns SingleCellExperiment
 read_h5ad <- function(file = NULL,
-                      layers = TRUE,
+                      layers = FALSE,
                       obsm = TRUE,
                       uns = TRUE
                       ) {
@@ -131,18 +129,26 @@ read_h5ad <- function(file = NULL,
   # File overview
   fs <- rhdf5::h5ls(file)
   
-  # Fetch components
-  X <- read_layer_h5ad(file,"X")
-  obs <- read_slot_h5ad(file, "obs")
-  var <- read_slot_h5ad(file, "var")
+  # Select main layer
+  all_layers <- fs$name[fs$group == "/layers"]
+  if (!layers %in% c(TRUE, FALSE, all_layers)) {
+    stop(paste(layers, "not available in", file))
+  }
+  if (layers %in% c(TRUE, FALSE)) {
+    main_layer <- "X"
+  } else {
+    main_layer <- layers
+    layers <- FALSE
+  }
   
   # Create SCE
   ds <- SingleCellExperiment::SingleCellExperiment(
-    assays = list(X = X),
-    colData = obs, rowData = var
+    assays = list(X = read_layer_h5ad(file, main_layer)),
+    colData = read_slot_h5ad(file, "obs"), 
+    rowData = read_slot_h5ad(file, "var")
   )
   
-  # Add assays
+  # Add layers
   if (layers) {
     assays <- fs$name[fs$group == "/layers"]
     for (i in assays) {

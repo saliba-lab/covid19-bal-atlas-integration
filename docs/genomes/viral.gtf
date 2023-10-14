@@ -1,0 +1,5 @@
+NC_045512.2	RefSeq	exon	266	29674	.	+	0	transcript_id "SCoV2"; gene_id "SCoV2"; gene_name "SCoV2";
+NC_001806.2	RefSeq	exon	1	151023	.	-	.	transcript_id "HSV-1"; gene_id "HSV-1"; gene_name "HSV-1";
+NC_006273.2	RefSeq	exon	1356	231527	.	+	.	transcript_id "CMV"; gene_id "CMV"; gene_name "CMV";
+NC_001664.4	RefSeq	exon	501	157990	.	+	0	transcript_id "HHV6A"; gene_id "HHV6A"; gene_name "HHV6A";
+NC_000898.1	RefSeq	exon	583	160849	.	+	0	transcript_id "HHV6B"; gene_id "HHV6B"; gene_name "HHV6B";

@@ -2,7 +2,7 @@
 Cell type annotation
 
 Usage:
-    analysis_annotation-celltype.R --plot-dir=<path> [options] <file>
+    annotation-markers.R --plot-dir=<path> [options] <file>
     
 Options:
     -h --help             Show this screen.
@@ -15,14 +15,24 @@ suppressMessages({
     source(i)
   }
 })
+source("reports/sample-overview.R")
 
 #' The main script function
 main <- function() {
+  
+  # Libraries ------------------------------------------------------------------
+  
+  library('clustree')
   
   # Variables ------------------------------------------------------------------
   args <- docopt::docopt(doc)
   
   in_file <- args[["<file>"]]
+  in_overview <- "docs/overview.xlsx"
+  in_doublet <- stringr::str_replace(in_file, ".h5ad", "_doublets.tsv")
+  in_hlca_labels <- stringr::str_replace(in_file, ".h5ad", "_hlca-labels.csv")
+  in_hlca_latent <- stringr::str_replace(in_file, ".h5ad", "_hlca-latent.csv")
+  
   out_file <- in_file
   out_file_ann <- stringr::str_replace(out_file, ".h5ad", "_annotation.tsv")
   out_dir <- stringr::str_replace(
@@ -34,19 +44,386 @@ main <- function() {
   
   # Read data ------------------------------------------------------------------
   message("Reading data ...")
-  ds <- read_h5ad(in_file)
+  ds <- read_h5ad(in_file, layers = "cp10k")
+  
+  # HLCA transfer
+  hlca <- list()
+  hlca$labels <- read.csv(in_hlca_labels, row.names = "X")
+  
+  # Overview
+  ov <- list()
+  for (i in readxl::excel_sheets(in_overview)) {
+    ov[[i]] <- readxl::read_excel(in_overview, i)
+  }
+  ov <- clean_dataset_overview(ov)
+  
+  # Marker genes
+  xls_url <- "https://nubes.helmholtz-berlin.de/s/id9rrKNeditKMmF"
+  xls_url <- paste0(xls_url, "/", "download")
+  xls <- "docs/celltype/markers.xlsx"
+  download.file(xls_url, xls)
+  markers <- list()
+  for (i in readxl::excel_sheets(xls)) {
+    markers[[i]] <- readxl::read_excel(xls, sheet = i)
+  }
+  
+  # Public markers
+  url <- "https://panglaodb.se/markers/PanglaoDB_markers_27_Mar_2020.tsv.gz"
+  panglao <- "docs/celltype/panglaoDB.csv"
+  download.file(url, panglao)
+  pan <- read.table(panglao, sep = "\t", header = TRUE)
+  pan <- pan[stringr::str_detect(pan$species, "Hs"), ]
+  
+  # Published cohort 1
+  url <- "https://ars.els-cdn.com/content/image/1-s2.0-S0092867421013830-mmc2.xlsx"
+  cohort1 <- "docs/celltype/cohort1_macro.xlsx"
+  download.file(url, cohort1)
+  readxl::excel_sheets(cohort1)
+  ch1 <- readxl::read_excel(cohort1, "2", skip = 2)
+  ch1 <- ch1[ch1$FDR < 1e-15, ]
+  
+  # Create random vector to split dataset
+  ds$random <- sample(1:10, ncol(ds), replace = TRUE)
+  
+  # Exploratory analysis -------------------------------------------------------
   
   # Select embedding
   names(ds@int_colData$reducedDims)
-  emb <- "counts_seurat5000_scVI_n30l1h128"
+  emb <- "counts_seurat2000_scVI_n30l1h128"
   
-  # Calculate UMAP embedding ---------------------------------------------------
+  # Calculate UMAP embedding
   set.seed(42)
   key <- paste0(emb, "_", "umap")
   ds <- scater::runUMAP(ds, name=key, dimred=emb, metric = "cosine",
                         min_dist = 0.3)
   
-  plot_embedding(ds, embedding = key, assay = "cp10k", color = "MKI67")
+  # Plot
+  plot_embedding(ds, embedding = key, color = "")
+  fn <- paste0(out_dir, "umap", "_", "density", ".", "png")
+  ggplot2::ggsave(fn, width = 7, height = 6, bg = "white")
+  
+  # Plot
+  plot_embedding(ds, embedding = key, color = "MKI67")
+  fn <- paste0(out_dir, "umap", "_", "MKI67", ".", "png")
+  ggplot2::ggsave(fn, width = 7, height = 6, bg = "white")
+  
+  # Plot
+  plot_embedding(ds, embedding = key, color = "percent.mt")
+  fn <- paste0(out_dir, "umap", "_", "percentMT", ".", "png")
+  ggplot2::ggsave(fn, width = 7, height = 6, bg = "white")
+  
+  # Plot
+  plot_embedding(ds, embedding = key, color = "libsize", pt.stroke = .5)
+  fn <- paste0(out_dir, "umap", "_", "libsize", ".", "png")
+  ggplot2::ggsave(fn, width = 7, height = 6, bg = "white")
+  
+  # Plot
+  genes <- rownames(ds)[grep("IGH", rownames(ds))]
+  fn <- paste0(out_dir, "IGH-genes.pdf")
+  pdf(fn)
+  for (i in genes) {
+    p <- plot_embedding(ds, embedding = key, color = i)
+    print(p)
+  }
+  dev.off()
+  
+  # Assign sample names to multiplexed libraries -------------------------------
+  
+  ht2lab <- c(
+    "L36:1" = "doublet",
+    "L36:2" = "BAL_44",
+    "L36:3" = "BAL_45",
+    "L36:4" = "BAL_45",
+    "L37:1" = "BAL_47",
+    "L37:2" = "BAL_47",
+    "L37:3" = "BAL_46",
+    "L37:4" = "BAL_46",
+    "L39:1" = "BAL_32",
+    "L39:2" = "negative",
+    "L39:3" = "doublet",
+    "L39:4" = "BAL_31",
+    "L39:5" = "BAL_33",
+    "L40:1" = "BAL_50",
+    "L40:2" = "doublet",
+    "L40:3" = "BAL_49",
+    "L40:4" = "BAL_49",
+    "L42:1" = "BAL_41",
+    "L42:2" = "BAL_40",
+    "L42:3" = "BAL_37",
+    "L42:4" = "doublet",
+    "L42:5" = "BAL_39",
+    "L42:6" = "doublet"
+  )
+  
+  index <- which(ds$hto_clust != "None")
+  ds$sample <- as.character(ds$sample)
+  ds$sample[index] <- ht2lab[ds$hto_clust[index]]
+  lvl <- unique(ds$sample)[order(as.numeric(
+    stringr::str_split(unique(ds$sample), "_", simplify = TRUE)[, 2]
+    ))
+  ]
+  ds$sample <- factor(ds$sample, lvl)
+  
+  # Plot
+  plot_embedding(ds, embedding = key, color = "sample", pt.stroke = .2)
+  fn <- paste0(out_dir, "umap", "_", "sample", ".", "png")
+  ggplot2::ggsave(fn, width = 10, height = 6, bg="white")
+  
+  # Assign patient data to samples ---------------------------------------------
+  
+  # Days post symptom onset
+  ds$dpso <- ov$samples$dpso[match(ds$sample, ov$samples$sample)]
+  
+  # Plot
+  plot_embedding(ds, embedding = key, color = "dpso")
+  fn <- paste0(out_dir, "umap", "_", "dpso", ".", "png")
+  ggplot2::ggsave(fn, width = 10, height = 6, bg="white")
+  
+  # Assign patient id
+  s2p <- ov$samples$patient
+  names(s2p) <- ov$samples$sample
+  ds$patient <- factor(s2p[ds$sample])
+  
+  # Plot
+  plot_embedding(ds, embedding = key, color = "patient", pt.stroke = .1)
+  fn <- paste0(out_dir, "umap", "_", "patient", ".", "png")
+  ggplot2::ggsave(fn, width = 10, height = 6, bg="white")
+  
+  # Patient outcome ------------------------------------------------------------
+  
+  ds$outcome <- "absent"
+  ds$outcome[which(
+    ds$patient %in% c("C19-CB-0916", "C19-CB-40001", "C19-CB-40003", "C19-CB-0915")
+    )] <- "deceased"
+  ds$outcome[which(
+    ds$patient %in% c("C19-CB-0914", "C19-CB-40002", "C19-CB-0917", "C19-CB-0913")
+  )] <- "survived"
+  
+  plot_embedding(ds, embedding = key, color = "outcome", pt.stroke = .1, 
+                 pl.title = "Disease outcome", color.pal = "manual",
+                 color.colors = c("grey", "indianred", "skyblue"))
+  fn <- paste0(out_dir, "umap", "_", "outcome", ".", "png")
+  ggplot2::ggsave(fn, width = 7.5, height = 6, bg="white")
+  
+  # Cell cycle annotation ------------------------------------------------------
+  message("Annotating cell cycle...")
+  
+  # Compute AUC
+  fn <- paste0(out_dir, "auc_cellcycle.csv")
+  if (file.exists(fn)) {
+    ds@metadata$cellcylce <- read.csv(fn, row.names = "X")
+  } else {
+    mrk <- markers$cellcycle
+    mrk <- split(mrk$gene, mrk$type)
+    ds@metadata$cellcycle <- run_AUCell(ds, mrk, batch = "random", assay = "X")
+    names(ds@metadata$cellcycle) <- names(mrk)
+    write.csv(ds@metadata$cellcycle, fn) 
+  }
+  
+  # Plot
+  plot_cell_scores(ds, scores = "cellcycle", embedding = key, nrow = 2)
+  fn <- paste0(out_dir, "umap", "_", "cellcycle-scores", ".", "png")
+  ggplot2::ggsave(fn, width = 4.2, height = 6)
+  
+  # Label
+  data <- ds@metadata$cellcycle
+  data$clust <- "G1"
+  data$clust[data$G2M > 0.1 & data$S < 0.1] <- "G2M"
+  data$clust[data$S > 0.1 & data$G2M < 0.1] <- "S"
+  data$clust[data$S > 0.1 & data$G2M > 0.1] <- "S+G2M"
+  ggplot2::ggplot(data, ggplot2::aes(G2M, S, col = clust)) +
+    ggplot2::geom_point(size = .1, stroke = 1, shape = 16) +
+    ggplot2::theme_classic(15) +
+    ggplot2::guides(
+      color = ggplot2::guide_legend(override.aes = list(size = 5, shape = 20))
+    )
+  ds$cc1 <- factor(data$clust, c("G1", "S", "G2M", "S+G2M"))
+  ds$cc2 <- "G1"
+  ds$cc2[data$clust %in% c("S", "G2M", "S+G2M")] <- "Prolif."
+  
+  # Plot
+  plot_embedding(ds, embedding = key, color = "cc1", pt.stroke = .1,
+                 pl.title = "Cell cycle phase", color.pal = "manual", 
+                 color.colors = c("grey", "navy", "indianred", "orange"))
+  fn <- paste0(out_dir, "umap", "_", "cellcycle", ".", "png")
+  ggplot2::ggsave(fn, width = 7.3, height = 6, bg = "white")
+  
+  # Clustering -----------------------------------------------------------------
+  
+  # Compute clusters
+  fn <- paste0(
+    out_dir, "cluster", "_", stringr::str_replace_all(emb,"_","-"), ".", "csv"
+    )
+  if (file.exists(fn)) {
+    ds@metadata$cluster <- read.csv(fn, row.names = "X")
+    names(ds@metadata$cluster) <- stringr::str_remove(
+      names(ds@metadata$cluster), "X"
+      )
+  } else {
+    ds@metadata$cluster <- cluster_cells(ds, emb = emb, alg = "leiden")
+    write.csv(ds@metadata$cluster, fn)
+  }
+  
+  # Create cluster tree
+  data <- ds@metadata$cluster
+  names(data) <- paste0("res_", names(data))
+  
+  tree <- clustree::clustree(data, prefix = "res_")
+  tree
+  fn <- paste0(out_dir, "clustree", ".", "png")
+  ggplot2::ggsave(fn, width = 12, height = 12)
+  
+  # Plot
+  ds$cluster <- factor(as.numeric(ds@metadata$cluster$`2.4`))
+  plot_embedding(ds, embedding = key, color = "cluster")
+  
+  # Plot
+  plot_clusters_embedding(ds, clusters="cluster", embedding=key)
+  fn <- paste0(out_dir, "cluster", "-", "overview", ".", "png")
+  ggplot2::ggsave(fn, width = 27, height = 9)
+  
+  # Cell type markers - level 1 ------------------------------------------------
+  
+  # Compute AUC
+  fn <- paste0(out_dir, "auc_level1.csv")
+  if (file.exists(fn)) {
+    ds@metadata$level_1 <- read.csv(fn, row.names = "X")
+  } else {
+    mrk <- markers$level_1
+    mrk <- split(mrk$gene, mrk$type)
+    ds@metadata$level_1 <- run_AUCell(ds, mrk, batch = "random", assay = "X")
+    names(ds@metadata$level_1) <- names(mrk)
+    write.csv(ds@metadata$level_1, fn)
+  }
+  
+  # Plot
+  plot_cell_scores(ds, scores = "level_1", embedding = key, nrow = 2)
+  fn <- paste0(out_dir, "umap", "_", "level-1-scores", ".", "png")
+  ggplot2::ggsave(fn, width = 12, height = 6)
+  
+  # Cell type markers - level 2 ------------------------------------------------
+  
+  # Compute AUC
+  fn <- "data/BCB/full_auc_level2.csv"
+  if (file.exists(fn)) {
+    ds@metadata$level_2 <- read.csv(fn, row.names = "X")
+  } else {
+    mrk <- markers$level_2
+    mrk <- split(mrk$gene, mrk$type)
+    ds@metadata$level_2 <- run_AUCell(ds, mrk, batch = "random", assay = "X")
+    names(ds@metadata$level_2) <- names(mrk)
+    write.csv(ds@metadata$level_2, fn) 
+  }
+  
+  # Plot
+  plot_cell_scores(ds, scores = "level_2", embedding = key, nrow = 2)
+  fn <- paste0(out_dir, "umap", "_", "level-2-scores", ".", "png")
+  ggplot2::ggsave(fn, width = 22, height = 6)
+  
+  # Cell type markers - level 3 ------------------------------------------------
+  
+  # Compute AUC
+  fn <- "data/BCB/full_auc_level3.csv"
+  if (file.exists(fn)) {
+    ds@metadata$level_3 <- read.csv(fn, row.names = "X")
+  } else {
+    mrk <- markers$level_3
+    mrk <- split(mrk$gene, mrk$type)
+    ds@metadata$level_3 <- run_AUCell(ds, mrk, batch = "random", assay = "X")
+    names(ds@metadata$level_3) <- names(mrk)
+    write.csv(ds@metadata$level_3, fn) 
+  }
+  
+  # Plot AUC
+  plot_cell_scores(ds, scores = "level_3", embedding = key, nrow = 4)
+  fn <- paste0(out_dir, "umap", "_", "level-3-scores", ".", "png")
+  ggplot2::ggsave(fn, width = 16, height = 12, dpi = 100)
+  
+  # Cell type markers - PanglaoDB ----------------------------------------------
+  
+  # Compute AUC
+  fn <- paste0(out_dir, "auc_panglao.csv")
+  if (file.exists(fn)) {
+    ds@metadata$panglao <- read.csv(fn, row.names = "X")
+  } else {
+    mrk <- split(pan$official.gene.symbol, pan$cell.type)
+    ds@metadata$panglao <- run_AUCell(ds, mrk, batch = "random", assay = "X")
+    names(ds@metadata$panglao) <- names(mrk)
+    write.csv(ds@metadata$panglao, fn)
+  }
+  
+  ds$score <- ds@metadata$panglao$Pulmonary.alveolar.type.I.cells
+  plot_embedding(ds, embedding = key, color = "score")
+  
+  # Macrophage markers - cohort 1 ----------------------------------------------
+  
+  # Compute AUC
+  fn <- "data/BCB/full_auc_cohort1-mp.csv"
+  if (file.exists(fn)) {
+    ds@metadata$cohort1_mp <- read.csv(fn, row.names = "X")
+  } else {
+    mrk <- split(ch1$gene, ch1$cluster)
+    ds@metadata$cohort1_mp <- run_AUCell(ds, mrk, batch = "random", assay = "X")
+    names(ds@metadata$cohort1_mp) <- names(mrk)
+    write.csv(ds@metadata$cohort1_mp, fn)
+  }
+  
+  # Plot
+  plot_cell_scores(ds, scores = "cohort1_mp", embedding = key, nrow = 2)
+  fn <- paste0(out_dir, "umap", "_", "cohort1-mp-scores", ".", "png")
+  ggplot2::ggsave(fn, width = 10, height = 6)
+  
+  # Annotation - final ---------------------------------------------------------
+  
+  # Label cells
+  data <- ds@metadata$level_2
+  df <- data.frame(row.names = rownames(data))
+  df$total <- rowSums(data)
+  df$pos <- rowSums(data > attr(data, "thresh"))
+  df$max <- sparseMatrixStats::rowMaxs(as.matrix(data))
+  df$sd <- sparseMatrixStats::rowSds(as.matrix(data))
+  
+  index <- df$pos > 0
+  data[index, ] == df$max[index]
+  
+  # Plot
+  ds$score <- df$sd
+  plot_embedding(ds, embedding = key, color = "score")
+  
+  
+  df <- as.data.frame(auc)
+  df$bc <- rownames(df)
+  df <- tidyr::gather(df, "type", "score", -bc)
+  df <- df[df$score > 0, ]
+  ggplot2::ggplot(df, ggplot2::aes(type, score, col = type)) +
+    ggplot2::geom_violin(scale = "width") +
+    ggplot2::geom_point(
+      data = data.frame(name = names(auc), thresh = attr(auc, "thresh")), 
+      ggplot2::aes(name, thresh), color = "black"
+      ) +
+    ggplot2::theme_classic(15) +
+    ggplot2::theme(
+      panel.grid.major.y = ggplot2::element_line(color = "grey70"),
+      panel.grid.minor.y = ggplot2::element_line(color = "grey80"),
+      axis.title.x = ggplot2::element_blank()
+    )
+  
+  df$type <- stringr::str_replace(df$type, "\\.", "\\/")
+  df$th <- attr(auc, "thresh")[df$type]
+  df$keep <- df$score > df$th
+  
+  df <- df[df$keep, ]
+  df <- dplyr::group_by(df, bc, type)
+  df <- dplyr::summarise(df, score = score)
+  
+  # Explore
+  names(auc)
+  type <- names(auc)[3]
+  hist(auc[[type]][auc[[type]] > 0], breaks = 100, main = type)
+  ds$score <- auc[[type]] > 0.4
+  plot_embedding(ds, embedding = key, cells = 30000, color = "score")
+  
+  plot_embedding(ds, embedding = key, cells = 30000, color = "JCHAIN")
   
   # Explore HLCA predictions ---------------------------------------------------
   
@@ -160,30 +537,6 @@ main <- function() {
   plot_clusters_embedding(ds, "scVI_louvain", "X_scVI_umap", rt.plot = FALSE,
                           write = TRUE, out_dir = out_dir, nrow = 4,
                           pl.width = 16, pl.height = 9)
-  
-  # Cell cycle annotation ------------------------------------------------------
-  markers <- Seurat::cc.genes.updated.2019
-  names(markers) <- c("S-Phase", "G2M-Phase")
-  ds@metadata[["CellCycle"]] <- calc_expression_scores(ds, markers)
-  
-  plot_cell_scores(ds, "CellCycle", embedding = "X_mnn_umap", nrow = 2,
-                   pt.size = .1, pt.shape = 20, pt.stroke = .1,
-                   pl.write = TRUE, pl.width = 4.5)
-  
-  plot_cell_scores(ds, "CellCycle", embedding = "X_scVI_umap", nrow = 2,
-                   pt.size = .1, pt.shape = 20, pt.stroke = .1,
-                   pl.write = TRUE, pl.width = 4.5)
-  
-  data <- ds@metadata$CellCycle
-  names(data) <- c("x", "y")
-  data$prolif <- data$x >= 0.5 | data$y >= 0.75
-  
-  ggplot2::ggplot(data, ggplot2::aes(x, y, col = prolif)) +
-    ggplot2::geom_point(size = 1, shape = 21, strok = 1) +
-    ggplot2::theme_classic(15)
-  
-  ds$Proliferating <- data$prolif
-  plot_embedding(ds, "Proliferating", "X_mnn_umap", pt.size=.1, pt.stroke=.1)
   
   # Cell type annotation - level 1 ---------------------------------------------
   markers <- readxl::read_excel("docs/cell-type-markers.xlsx", "level_1")

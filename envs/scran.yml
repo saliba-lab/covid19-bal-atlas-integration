@@ -1,0 +1,28 @@
+name: covid19-bal-atlas-scran
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - r-docopt
+  - r-biocmanager
+  - bioconductor-scran
+  - bioconductor-scater
+  - bioconductor-zellkonverter
+  - bioconductor-rhdf5
+  - bioconductor-hdf5array
+  - bioconductor-singler
+  - bioconductor-aucell
+  - bioconductor-batchelor
+  - bioconductor-scdblfinder
+  - r-markdown
+  - r-rmarkdown
+  - r-readxl
+  - r-viridis
+  - r-remotes
+  - igraph
+  - r-ggraph
+  - r-reticulate
+  - r-cellassign
+  - r-clustree
+  - r-irkernel

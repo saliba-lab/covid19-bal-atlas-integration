@@ -1,11 +1,23 @@
 # Data directories (too large for GitHub)
 data/
+log/
 analysis/
 archive/
+
+# Manuscript intermediates (except instructions)
+docs/manuscript/*.pdf
+docs/manuscript/*.log
+docs/manuscript/*.synctex.gz
+docs/manuscript/*.out
+docs/manuscript/*.aux
+
+# Count samplesheets
+docs/samplesheets/count/
 
 # R files
 .Rhistory
 
-# Spyder files
+# Python files
 .spyproject/
 .idea/
+.ipynb_checkpoints/

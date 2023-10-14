@@ -5,12 +5,13 @@ Integration by scVI
 
 Usage:
     method_integration-scVI.py [options] <file>
-    
+
 Options:
     -h --help           Show this screen.
+    -g --gpu		Use GPU for training of the VAE
 """
 
-def run_scVI(adata, n_latent, n_layers, n_hidden, hvg_method):
+def run_scVI(adata, n_latent, n_layers, n_hidden, hvg_method, use_gpu):
     """
     Run scVI
 
@@ -33,7 +34,7 @@ def run_scVI(adata, n_latent, n_layers, n_hidden, hvg_method):
     scvi.model.SCVI.setup_anndata(adata, layer="counts", batch_key="batch")
     vae = scvi.model.SCVI(adata, n_latent=n_latent, n_layers=n_layers, 
                           n_hidden=n_hidden, gene_likelihood="nb")
-    vae.train(use_gpu=True)
+    vae.train(use_gpu=use_gpu)
     adata.obsm["X_emb"] = vae.get_latent_representation()
 
     return(adata.obsm["X_emb"])
@@ -46,10 +47,12 @@ def main():
 
     # Variables
     args = docopt(__doc__)
-    
-    in_file = args["<file>"]    
+
+    in_file = args["<file>"]
+    gpu_flag = args["--gpu"]
+
     out_file = in_file
-    
+
     print(f"Reading dataset from '{in_file}'")
     ds = sc.read(in_file)
 
@@ -67,7 +70,7 @@ def main():
                     print(f"{n} dimensions from {l} layer(s) with {h} nodes from {hvg} features")
                     arch = "n" + str(n) + "l" + str(l) + "h" + str(h)
                     key = layer + "_" + hvg + "_" + "scVI" + "_" + arch
-                    ds.obsm[key] = run_scVI(ds, n, l, h, hvg)
+                    ds.obsm[key] = run_scVI(ds, n, l, h, hvg, gpu_flag)
 
     # Write data
     print(f"Writing output to '{out_file}'")

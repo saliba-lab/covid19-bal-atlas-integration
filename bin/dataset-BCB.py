@@ -22,33 +22,48 @@ def get_combined():
 
     """
     import os.path
-    import tempfile
     import scanpy as sc
+    import pandas as pd
     
-    # Variables
-    url = "https://nubes.helmholtz-berlin.de/s/A7XQ3yZYGMnFR3H"
+    # Variables ---------------------------------------------------------------
+    h5file = "data/BCB/filtered_feature_bc_matrix.h5"
+    url = "https://nubes.helmholtz-berlin.de/s/yPaeYMtAqmrbJYD"
     url = os.path.join(url, "download")
+    
+    aggr_csv = "data/BCB/aggregation.csv"
+    aggr_url = "https://nubes.helmholtz-berlin.de/s/Z3KMkrYnirwfCqb"
+    aggr_url = os.path.join(aggr_url, "download")
 
-    # Download
-    print(f"Downloading matrix from '{url}'...")
-    temp_dir = tempfile.TemporaryDirectory()
-    temp_file = os.path.join(temp_dir.name, "matrix.h5")
-    os.system("curl" + " " + url + " -o " + temp_file)
+    # Download data -----------------------------------------------------------
+    
+    # Counts
+    if os.path.exists(h5file):
+        print(f"File '{h5file}' already exists.")
+    else:
+        print(f"Downloading matrix from '{url}'...")
+        os.system("curl" + " " + url + " -o " + h5file)
+        
+    # Library info
+    if os.path.exists(aggr_csv):
+        print(f"File '{aggr_csv}' already exists.")
+    else:
+        print(f"Downloading aggregation.csv from '{aggr_url}'...")
+        os.system("curl" + " " + aggr_url + " -o " + aggr_csv)
 
-    # Object creation
+    # Create AnnData ----------------------------------------------------------
     print("Creating AnnData object")
-    adata = sc.read_10x_h5(temp_file)
+    adata = sc.read_10x_h5(h5file, gex_only=False)
     adata.var_names_make_unique()
 
-    temp_dir.cleanup()
-
     print("Adding sample identifiers in 'obs'")
+    aggr = pd.read_csv(aggr_csv)
+    aggr.index = aggr.index+1
     v = []
     for i in adata.obs.index:
         v.append(int(i.split("-")[1]))
-    adata.obs["sample_id"] = v
-    adata.obs["sample_id"] = adata.obs["sample_id"].astype("string")
-
+    
+    adata.obs["sample_id"] = aggr["sample_id"][v].values
+    
     return adata
 
 
@@ -63,7 +78,8 @@ def main():
     
     flag_overwrite = args["--overwrite"]
     out_file = args["<file>"]
-    out_file_viral = os.path.dirname(out_file) + "/SCoV2_" + os.path.basename(out_file)
+    dname=os.path.dirname(out_file)
+    out_file_viral = dname + "/alt_" + os.path.basename(out_file)
     
     # Checks
     fpath = os.path.dirname(out_file)
@@ -79,9 +95,9 @@ def main():
     ds = get_combined()
     print(ds)
     
-    # Separate human & viral counts
-    print("Moving viral counts in separate layer")
-    viral_ids = [s for s in ds.var.gene_ids if "ENSSASG" in s]
+    # Separate assays
+    print("Moving other counts in separate AnnData...")
+    viral_ids = [s for s in ds.var.gene_ids if "ENSG" not in s]
     viral_ind = ds.var.gene_ids.isin(viral_ids)
     viral_genes = ds.var.index[viral_ind]
     vdata = sc.AnnData(ds.X[:, viral_ind])
@@ -89,12 +105,12 @@ def main():
     vdata.var["gene_ids"] = viral_ids
     vdata.obs = ds.obs
     
-    print("Removing viral counts from X")
+    print("Retaining only human gene counts in X...")
     human_ids = [s for s in ds.var.gene_ids if "ENSG" in s]
     human_ind = ds.var.gene_ids.isin(human_ids)
     ds = ds[:, human_ind]
     
-    print(f"Writing output to '{out_file}'")
+    print(f"Writing output to '{out_file}...'")
     ds.write_h5ad(out_file)
     vdata.write_h5ad(out_file_viral)
 

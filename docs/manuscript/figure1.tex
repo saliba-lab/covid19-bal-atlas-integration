@@ -1,0 +1,69 @@
+% Set PATH
+\newcommand{\PATH}{../..}
+
+% Row i I
+\newcommand{\rowiIheight}{.16\textheight}
+\newcommand{\rowiIhjust}{1}
+\newcommand{\rowiIvjust}{.5}
+
+% Row i II
+\newcommand{\rowiIIheight}{.11\textheight}
+\newcommand{\rowiIIhjust}{.75}
+\newcommand{\rowiIIvjust}{.5}
+
+\begin{figure}
+
+% Row 1
+\begin{tikzpicture}
+	\node[anchor=north west] at (0,0) {
+		\includegraphics[height=\rowiIheight]{\PATH/analysis/BCB/full/umap_density.png}};
+	\node[anchor=north east] at (\rowiIhjust,\rowiIvjust) {\textbf{\LARGE{A}}};
+\end{tikzpicture}
+\begin{tikzpicture}
+	\node[anchor=north west] at (0,0) {
+		\includegraphics[height=\rowiIheight]{\PATH/analysis/BCB/full/umap_patient.png}};
+	\node[anchor=north east] at (\rowiIhjust,\rowiIvjust) {\textbf{\LARGE{B}}};
+\end{tikzpicture}
+\begin{tikzpicture}
+	\node[anchor=north west] at (0,0) {
+		\includegraphics[height=\rowiIheight]{\PATH/analysis/BCB/full/umap_outcome.png}};
+	\node[anchor=north east] at (\rowiIhjust,\rowiIvjust) {\textbf{\LARGE{C}}};
+\end{tikzpicture}
+
+
+% Row 2
+\begin{tikzpicture}
+	\node[anchor=north west] at (0,0) {
+		\includegraphics[height=\rowiIIheight]{\PATH/analysis/BCB/full/umap_libsize.png}};
+	\node[anchor=north east] at (\rowiIIhjust,\rowiIIvjust) {\textbf{\LARGE{D}}};
+\end{tikzpicture}
+\begin{tikzpicture}
+	\node[anchor=north west] at (0,0) {
+		\includegraphics[height=\rowiIIheight]{\PATH/analysis/BCB/full/umap_percentMT.png}};
+	\node[anchor=north east] at (\rowiIIhjust,\rowiIIvjust) {\textbf{\LARGE{E}}};
+\end{tikzpicture}
+\begin{tikzpicture}
+	\node[anchor=north west] at (0,0) {
+		\includegraphics[height=\rowiIIheight]{\PATH/analysis/BCB/full/counts_seurat2000_scVI_n30l1h128_umap_doublet-score.png}};
+	\node[anchor=north east] at (\rowiIIhjust,\rowiIIvjust) {\textbf{\LARGE{F}}};
+\end{tikzpicture}
+\begin{tikzpicture}
+	\node[anchor=north west] at (0,0) {
+		\includegraphics[height=\rowiIIheight]{\PATH/analysis/BCB/full/counts_seurat2000_scVI_n30l1h128_umap_doublet-class.png}};
+	\node[anchor=north east] at (\rowiIIhjust,\rowiIIvjust) {\textbf{\LARGE{G}}};
+\end{tikzpicture}
+\begin{tikzpicture}
+	\node[anchor=north west] at (0,0) {
+		\includegraphics[height=\rowiIIheight]{\PATH/analysis/BCB/full/umap_cellcycle.png}};
+	\node[anchor=north east] at (\rowiIIhjust,\rowiIIvjust) {\textbf{\LARGE{H}}};
+\end{tikzpicture}
+
+% Row 3
+\begin{tikzpicture}
+	\node[anchor=north west] at (0,0) {
+		\includegraphics[width=\textwidth]{\PATH/analysis/BCB/full/umap_level-3-scores.png}};
+	\node[anchor=north east] at (.5,0) {\textbf{\LARGE{I}}};
+\end{tikzpicture}
+
+\caption{Cell type diversity in bronchoalveolar lavage (BAL) fluid in severe COVID-19. A--H) UMAP embedding of 320709 transcriptomes based on a 30 dimensional latent space of an scVI model trained on 2000 HVGs. Data points have been colored by density (A), patient (B), disease outcome (C), library size (number of mRNA counts per cell, D), percentage of counts from mitochondria (E), scDblFinder score (F) and classification (G), cell cycle classification (H). Numeric variables have been averaged across overlapping data points. I) Cell type scores (AUC) based on marker gene expression (see \href{https://nubes.helmholtz-berlin.de/s/id9rrKNeditKMmF}{table S1, level 3}) on cell embeddings (as A).}
+\end{figure}

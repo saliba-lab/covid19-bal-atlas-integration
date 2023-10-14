@@ -41,8 +41,13 @@ summarize_groups <- function (
 #' @returns Data.frame containing factors of group membership
 #' 
 cluster_cells <- function(ds = NULL, emb = "X_mnn", alg = "louvain",
-                          dims = 30,
+                          dims = ncol(ds@int_colData$reducedDims[[emb]]),
                           res_from = 0.1, res_to = 3, res_by = 0.1) {
+  
+  stopifnot(
+    class(ds) == "SingleCellExperiment",
+    !is.null(emb)
+  )
   
   mat <- SingleCellExperiment::reducedDim(ds, emb)
   g <- scran::buildSNNGraph(t(mat[, 1:dims]))
@@ -73,7 +78,7 @@ cluster_cells <- function(ds = NULL, emb = "X_mnn", alg = "louvain",
 #' 
 #' @returns Data.frame
 #' 
-run_AUCell <- function(lds = NULL, markers = NULL, batch = "patient", 
+run_AUCell <- function(ds = NULL, markers = NULL, batch = "patient", 
                        assay = "X") {
   
   stopifnot(
@@ -93,10 +98,30 @@ run_AUCell <- function(lds = NULL, markers = NULL, batch = "patient",
     # Run AUCell
     cells_rankings <- AUCell::AUCell_buildRankings(mat)
     cells_AUC <- AUCell::AUCell_calcAUC(markers, cells_rankings)
-    data[[i]] <- as.data.frame(t(cells_AUC@assays@data$AUC))
+    data[[i]] <- cells_AUC
   }
-  data <- dplyr::bind_rows(data)
-  data <- data[match(rownames(data), colnames(ds)), ]
+  
+  cells_AUC <- data[[1]]
+  for (i in 2:length(data)) {
+    cells_AUC@colData <- rbind(cells_AUC@colData, data[[i]]@colData)
+    cells_AUC@assays@data$AUC <- cbind(
+      cells_AUC@assays@data$AUC, data[[i]]@assays@data$AUC
+      )
+  }
+  thresh <- AUCell::AUCell_exploreThresholds(cells_AUC)
+  
+  data <- data.frame(
+    row.names = rownames(cells_AUC@colData), 
+    t(cells_AUC@assays@data$AUC)
+    )
+  data <- data[colnames(ds), ]
+  
+  for (i in names(thresh)) {
+    thresh[[i]] <- thresh[[i]]$aucThr$selected[[1]]
+  }
+  
+  names(data) <- names(unlist(thresh))
+  attr(data, "thresh") <- unlist(thresh)
   
   return(data)
 }
@@ -261,6 +286,7 @@ plot_cell_scores <- function(ds = NULL, scores = NULL, embedding = NULL,
   sco <- ds@metadata[[scores]]
   data <- cbind(emb, sco)
   data <- tidyr::gather(data, "type", "score", -x, -y)
+  data$type <- factor(data$type, unique(data$type))
   data <- data[order(data$score), ]
   
   plot <- ggplot2::ggplot(data, ggplot2::aes(x, y, col = score)) +
@@ -345,14 +371,22 @@ summarize_overlapping_rows <- function(df=NULL, x="x", y="y", FUN=mean,
   }
   df$match <- paste(df$x, df$y, sep = ":")
   
+  # Account for split_by column
+  if (is.null(df[["wrap"]])) {
+    df$wrap <- "1"
+  }
+  
   # Summarize
   df <- dplyr::summarise(
-    dplyr::group_by(df, match),
+    dplyr::group_by(df, match, wrap),
     x = mean(x), y = mean(y), col = FUN(col)
   )
   
-  # Return as data.frame
-  return(as.data.frame(df))
+  # Make data.frame
+  df <- as.data.frame(df)
+  
+  # Return
+  return(df)
 }
 
 
@@ -368,39 +402,64 @@ summarize_overlapping_rows <- function(df=NULL, x="x", y="y", FUN=mean,
 #' @param pt.shape Point shape
 #' @param pt.stroke Point stroke
 #' @param pt.alpha Point alpha
+#' @param pt.aggr.breaks Number of breaks in x/y to average coordinates
+#' @param theme.size Theme size
 #' 
 #' @returns plot
 #' 
-plot_embedding <- function(ds=NULL, color=NA,
+plot_embedding <- function(ds=NULL, color=NULL, split_by = NULL,
                            embedding=names(ds@int_colData$reducedDims)[1], 
-                           assay = "X", cells = colnames(ds),
+                           assay = names(ds@assays)[1], cells = colnames(ds),
                            dims=1:2, pt.size=.1, pt.shape=20, 
-                           pt.stroke=.1, pt.alpha=1, 
-                           pl.write=FALSE, pl.height=6, pl.width=12
+                           pt.stroke=.25, pt.alpha=1, 
+                           pl.write=FALSE, pl.height=6, pl.width=12,
+                           pt.aggr.breaks=1000, theme.size = 20,
+                           split_by_rows = 1, pl.title = NULL,
+                           color.option = "A", color.dir = -1,
+                           color.pal = NULL, color.colors=NULL
 ) {
   
   stopifnot(
     class(ds) == "SingleCellExperiment"
   )
   
+  # Fetch embedding ------------------------------------------------------------
   df <- ds@int_colData$reducedDims[[embedding]][, dims]
   df <- as.data.frame(df)
   names(df) <- c("x", "y")
   
-  if (color %in% rownames(ds)) {
-    index <- match(color, rownames(ds))
-    df$col <- ds@assays@data[[assay]][index, ]
-  }
-  if (color %in% names(ds@colData)) {
-    df$col <- ds[[color]]
-  }
-  if (is.null(df$col)) {
-    warning("Color key '", color, "' not found.")
+  # Color ----------------------------------------------------------------------
+  if (length(color) == 1) {
+    # Single color
+    if (color %in% rownames(ds)) {
+      index <- match(color, rownames(ds))
+      df$col <- ds@assays@data[[assay]][index, ]
+    } else if (color %in% names(ds@colData)) {
+      df$col <- ds[[color]]
+    } else {
+      stop(paste0("Color key '", color, "' not found."))
+    }
+  } else if (length(color) > 1) {
+    # Multiple colors
+    if (all(color %in% rownames(ds))) {
+      stop("Multiple genes not yet implemented.")
+    } else if (all(color %in% names(ds@colData))) {
+      stop("Multiple categories not yet implemented.")
+    } else {
+      stop(paste0("Color keys '", stringr::str_flatten(color, ", "), 
+                  " ' not (all) present in dataset."))
+    }
+  } else {
+    # No colors
+    message("No color key specified. Showing point density.")
     df$col <- NaN
   }
   
+  # Guide elements -------------------------------------------------------------
   if (class(df$col) %in% c("numeric", "integer", "array")) {
-    colorscale <- viridis::scale_color_viridis(option = "A", direction = -1)
+    colorscale <- viridis::scale_color_viridis(
+      option = color.option, direction = color.dir
+      )
     guides <- ggplot2::guides(
       color = ggplot2::guide_colorbar(
         barheight = 20, barwidth = 1, ticks = FALSE
@@ -418,10 +477,46 @@ plot_embedding <- function(ds=NULL, color=NA,
     pt.aggr <- FALSE
   }
   
-  # Subset
+  # Colorscale -----------------------------------------------------------------
+  if (!is.null(color.pal)) {
+    pals <- rownames(RColorBrewer::brewer.pal.info)
+    if (color.pal %in% pals) {
+      colorscale <- ggplot2::scale_color_brewer(palette = color.pal,
+                                                direction = color.dir)
+    } else  if (color.pal == "manual" & 
+                length(color.colors) == length(unique(df$col))) {
+      colorscale <- ggplot2::scale_color_manual(values = color.colors)
+    }
+  }
+  
+  # Faceting -------------------------------------------------------------------
+  if (!is.null(split_by)) {
+    if (length(split_by) > 1) {
+      message("More than one category present for split_by, taking the first.")
+      split_by <- split_by[1]
+    } 
+    if (split_by %in% names(ds@colData)) {
+      df[["wrap"]] <- ds@colData[, split_by]
+      wrap <- ggplot2::facet_wrap(~wrap, nrow = split_by_rows)
+    } else {
+      message(paste0(
+        "Plot will not be split_by '", split_by, 
+        "' which is not present in colData"
+      ))
+      wrap <- NULL
+    }
+  } else {
+    wrap <- NULL
+  }
+  
+  # Subsetting -----------------------------------------------------------------
+  if (is.numeric(cells)) {
+    cells <- sample(colnames(ds), cells)
+  }
   index <- match(cells, colnames(ds))
   df <- df[index, ]
   
+  # Average overlapping points -------------------------------------------------
   if (pt.aggr) {
     # Set aggregation params
     if (all(is.nan(df$col))) {
@@ -432,19 +527,29 @@ plot_embedding <- function(ds=NULL, color=NA,
       FUN <- mean
     }
     # Summarize
-    df <- summarize_overlapping_rows(df, breaks = 1000, FUN=FUN)
+    df <- summarize_overlapping_rows(df, breaks = pt.aggr.breaks, FUN=FUN)
   }
-    
   
-  # Re-order
-  df <- df[order(df$col), ]
+  # Additional plotting params -------------------------------------------------
+  if (!is.null(pl.title) & class(pl.title) == "character") {
+    color <- pl.title
+  }
   
+  # Plotting order ------------------------------------------------------------- 
+  #df <- df[order(df$col), ]
+  
+  # Plot
   plot <- ggplot2::ggplot(df, ggplot2::aes(x, y, color = col)) +
     ggplot2::geom_point(size=pt.size, shape=pt.shape, stroke=pt.stroke, 
                         alpha=pt.alpha) +
     ggplot2::coord_fixed() +
-    ggplot2::labs(title = color, color = NULL) +
-    ggplot2::theme_void(20) +
+    wrap +
+    ggplot2::labs(title = color, color = NULL, subtitle = split_by) +
+    ggplot2::theme_void(theme.size) +
+    ggplot2::theme(
+      plot.subtitle = ggplot2::element_text(color = "darkgrey"),
+      strip.text = ggplot2::element_text(color = "darkgrey")
+    ) +
     colorscale + guides +
     arrow(df, "up") + arrow(df, "right")
   
@@ -487,6 +592,7 @@ plot_clusters_embedding <- function(ds=NULL, clusters=NULL,
   data <- cbind(emb, clust)
   data <- tidyr::gather(data, "type", "score", -x, -y)
   data$type <- factor(as.numeric(data$type))
+  data$score <- factor(as.numeric(data$score))
   
   # Get label positions
   label_pos <- dplyr::group_by(data, type, score)

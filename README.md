@@ -28,15 +28,37 @@ evaluation using (scIB) metrics and visualization of reports.
 The workflows are written in bash and can be submitted using SLURM.
 
 To reproduce the analysis please
-1. Install [conda](https://docs.conda.io/en/latest/miniconda.html#) (follow instructions and accept defaults)
+1. Install [conda](https://docs.conda.io/en/latest/miniconda.html#) (follow instructions and accept defaults), close and re-open the console
    ```
    curl -o miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
    bash miniconda.sh
    rm miniconda.sh
    ```
+1. Install [mamba](https://mamba.readthedocs.io/en/latest/installation.html)
+   ```
+   conda install -c bioconda mamba -y
+   mamba init
+   ```
+1. Clone and enter the git repository (if you want to specify the directory replace '~' with your local path)
+   ```
+   cd ~
+   git clone https://github.com/saliba-lab/covid19-bal-atlas-integration.git
+   cd covid19-bal-atlas-integration
+   ```
 1. Create conda environments
    ```
-   conda env create -f envs/default.yml
-   conda env create -f envs/scArches.yml
-   conda env create -f envs/scIB.yml
+   mamba env create -f envs/R.yml
+   conda env create -f envs/integration.yml
+   conda env create -f envs/scib.yml
+   ```
+1. Execute workflows (beginning with the count matrix)
+   ```
+   bash workflows/setup_BCB.sh
+   ```
+   
+## Addendum
+
+To use nextflow workflows please install java
+   ```
+   sudo apt install default-jre
    ```

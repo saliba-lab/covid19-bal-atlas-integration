@@ -1,0 +1,17 @@
+name: covid19-bal-atlas-integration
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - docopt
+  - scanpy
+  - louvain
+  - scvi-tools
+  - pymde
+  - spyder
+  - jupyter
+  - pip
+  - pip:
+      - scarches
+      - scvi-colab

@@ -8,6 +8,7 @@ dependencies:
   - r-base
   - scanpy
   - spyder
+  - jupyter
   - pip
   - pip:
       - scib

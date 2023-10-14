@@ -1,0 +1,9 @@
+demux_config.json
+BCLS_LANE_001.tar
+BCLS_LANE_001.tar.md5
+BCLS_LANE_002.tar
+BCLS_LANE_002.tar.md5
+BCLS_LANE_003.tar
+BCLS_LANE_003.tar.md5
+BCLS_LANE_004.tar
+BCLS_LANE_004.tar.md5

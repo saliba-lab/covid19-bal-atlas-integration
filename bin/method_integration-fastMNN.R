@@ -48,12 +48,12 @@ main <- function() {
   
   # Read data ------------------------------------------------------------------
   message("Reading data ...")
-  ds <- read_h5ad(in_file, obsm = FALSE)
+  ds <- read_h5ad(in_file, obsm = FALSE, layers = "cp10k")
   
   # Run method -----------------------------------------------------------------
   message("Running fastMNN...")
   
-  assays <- c("cp10k")
+  assays <- c("X")
   hvg_method <- ds@metadata$hvg_keys$keys
   dims <- c(10,30,50)
   neighbors <- c(10)
