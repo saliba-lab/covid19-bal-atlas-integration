@@ -12,6 +12,7 @@ dependencies:
   - scvi-tools
   - r-seurat
   - r-hdf5r
+  - bioconductor-rhdf5
   - bioconductor-scran
   - bioconductor-scater
   - bioconductor-batchelor
