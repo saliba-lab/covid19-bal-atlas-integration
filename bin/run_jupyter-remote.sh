@@ -30,5 +30,6 @@ port="8080"
 
 # Main program #############################################
 unset PYTHONPATH
+hostname
 conda activate $env
 jupyter notebook --no-browser --port=$port
