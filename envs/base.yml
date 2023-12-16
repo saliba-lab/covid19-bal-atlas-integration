@@ -6,29 +6,20 @@ channels:
 dependencies:
   - docopt
   - r-docopt
+  - rpy2
   - scanpy
   - louvain
   - scvi-tools
-  - pymde
-  - pip
   - r-seurat
-  - r-biocmanager
+  - r-hdf5r
+  - bioconductor-rhdf5
   - bioconductor-scran
   - bioconductor-scater
-  - bioconductor-zellkonverter
-  - bioconductor-rhdf5
-  - bioconductor-hdf5array
-  - bioconductor-singler
-  - bioconductor-aucell
   - bioconductor-batchelor
-  - r-markdown
-  - r-rmarkdown
+  - bioconductor-aucell
+  - bioconductor-scdblfinder
   - r-readxl
   - r-viridis
   - r-remotes
-  - spyder
-  - jupyter
-  - igraph
-  - r-ggraph
-  - r-shinycssloaders
-  - r-reticulate
+  - notebook
+  - r-irkernel
