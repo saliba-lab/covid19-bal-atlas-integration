@@ -15,6 +15,7 @@ dependencies:
   - bioconductor-aucell
   - bioconductor-batchelor
   - bioconductor-scdblfinder
+  - r-feather
   - r-markdown
   - r-rmarkdown
   - r-readxl
