@@ -55,7 +55,7 @@ clean_dataset_overview <- function(overview) {
   # Add patient information
   ind <- match(samples$patient, patients$id)
   samples$sex <- patients$sex[ind]
-  samples$endpoint <- patients$endpoint[ind]
+  samples$outcome <- patients$outcome[ind]
   
   # Replace sheets -------------------------------------------------------------
   overview$libraries <- data
@@ -136,6 +136,11 @@ create_count_samplesheets <- function(overview) {
       sample = i,
       library_type = "Gene Expression"
     )
+    if (lib$run == "unknown-run") { # Exception for unknown runs
+      csv$fastqs <- stringr::str_c(
+        lib[, c("wd", "path_1", "run", "libname")], 
+        collapse = "/")
+    }
     if (stringr::str_detect(lib$index, "SI-TT")) {
       csv$fastqs <- stringr::str_remove(csv$fastqs, paste0("/", csv$sample))
     }
@@ -183,10 +188,10 @@ create_sample_overview <- function(overview, color, shape) {
   # Order
   ind <- dplyr::summarise(
     dplyr::group_by(samples, patient), dpso = max(dpso), cohort = cohort,
-    endpoint = endpoint
+    outcome = outcome
   )
   ind <- unique(ind)
-  ind <- ind$patient[order(ind$cohort, ind$endpoint, ind$dpso)]
+  ind <- ind$patient[order(ind$cohort, ind$outcome, ind$dpso)]
   samples$patient <- factor(as.character(samples$patient), ind)
   
   # Plot
@@ -198,9 +203,9 @@ create_sample_overview <- function(overview, color, shape) {
       shape = shape$sex[samples$sex], size = 4
     ) +
     ggplot2::geom_point(
-      ggplot2::aes(x = endpoint_dpso, shape = endpoint), size = 4
+      ggplot2::aes(x = endpoint_dpso, shape = outcome), size = 4
     ) +
-    ggplot2::scale_shape_manual(values = shape$endpoint) +
+    ggplot2::scale_shape_manual(values = shape$outcome) +
     ggplot2::theme_classic(15) +
     ggplot2::theme(
       strip.text.y = ggplot2::element_text(angle = 0),
@@ -219,7 +224,7 @@ main <- function() {
   
   # Variables ------------------------------------------------------------------
   file <- "docs/overview.xlsx"
-  url <- "https://nubes.helmholtz-berlin.de/s/LnJn5z8wB2o2NrJ"
+  url <- "https://syncandshare.desy.de/index.php/s/CrDgDwHRQNDWYcj"
   url <- paste0(url, "/download")
   
   mkfastq_samplesheets <- "data/samplesheets/mkfastq/"
@@ -248,7 +253,7 @@ main <- function() {
     "Male" = "\u2642", 
     "Female" = "\u2640"
   )
-  shape$endpoint <- c(
+  shape$outcome <- c(
     death = "\u271D",
     release = "\u00BB",
     unknown = "\u003F"
