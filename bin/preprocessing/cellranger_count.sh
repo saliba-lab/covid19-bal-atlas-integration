@@ -35,7 +35,7 @@ fi
 
 # Make sure samplesheets are up to date
 echo "Create samplesheets from overview"
-Rscript reports/overview_BCB.R
+Rscript reports/sample-overview.R
 
 # Move to output directory
 cd $out
